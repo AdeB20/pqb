@@ -18,6 +18,39 @@ export default async function CoursePage({
 
   if (!user) redirect("/login");
 
+  const { data: rawProfile } = await supabase
+    .from("profiles")
+    .select("department_id")
+    .eq("auth_user_id", user.id)
+    .single();
+  const profile = rawProfile as unknown as { department_id: string } | null;
+  if (!profile) redirect("/login");
+
+  const { data: rawCourseAccess } = await supabase
+    .from("courses")
+    .select("scope, department_id")
+    .eq("id", params.id)
+    .single();
+  const courseAccess = rawCourseAccess as unknown as {
+    scope: string;
+    department_id: string;
+  } | null;
+
+  if (!courseAccess) redirect("/dashboard");
+
+  const isGeneral = courseAccess.scope === "general";
+  const isOwnDept = courseAccess.department_id === profile.department_id;
+  const isLinked = !isGeneral && !isOwnDept
+    ? !!(await supabase
+        .from("department_courses")
+        .select("course_id")
+        .eq("course_id", params.id)
+        .eq("department_id", profile.department_id)
+        .maybeSingle()).data
+    : false;
+
+  if (!isGeneral && !isOwnDept && !isLinked) redirect("/dashboard");
+
   const { data: rawCourse } = await supabase
     .from("courses")
     .select("*, department:department_id(name)")

@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { validateEnv } from "@/lib/env";
+
+// Fail fast at build time if env vars are missing
+if (typeof window === "undefined") {
+  const missing = validateEnv();
+  if (missing.length > 0) {
+    throw new Error(
+      `FATAL: Missing required environment variables: ${missing.join(", ")}. ` +
+      "Check .env.example for the full list.",
+    );
+  }
+}
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 

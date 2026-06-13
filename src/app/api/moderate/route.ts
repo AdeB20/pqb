@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { validateFile } from "@/lib/utils";
+import { moderateSchema } from "@/lib/validations";
+import { logger } from "@/lib/logger";
 
 const rateLimitMap = new Map<string, { count: number; reset: number }>();
 const RATE_LIMIT = 3;
@@ -20,6 +23,7 @@ function checkRateLimit(userId: string): boolean {
 }
 
 export async function POST(req: Request) {
+  const start = Date.now();
   try {
     const supabase = createClient();
     const service = createServiceClient();
@@ -28,25 +32,29 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
+      logger.warn({ event: "moderate.unauthorized", message: "Unauthorized moderate attempt", ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown" });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (!checkRateLimit(user.id)) {
+      logger.warn({ event: "moderate.rate_limited", message: "Moderate rate limit hit", userId: user.id });
       return NextResponse.json(
         { error: "Too many requests. Please wait before uploading again." },
         { status: 429 },
       );
     }
 
-    console.log("=== MODERATE START ===");
-    const { questionId, courseCode, courseName } = await req.json();
-
-    if (!questionId || !courseCode || !courseName) {
+    const body = await req.json();
+    const parsed = moderateSchema.safeParse(body);
+    if (!parsed.success) {
+      logger.warn({ event: "moderate.invalid_input", message: "Invalid moderate request body", userId: user.id, metadata: { errors: parsed.error.issues } });
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: parsed.error.issues[0]?.message || "Invalid input" },
         { status: 400 },
       );
     }
+
+    const { questionId, courseCode, courseName } = parsed.data;
 
     const { data: rawQuestion } = await service
       .from("past_questions")
@@ -61,10 +69,11 @@ export async function POST(req: Request) {
     } | null;
 
     if (!question) {
+      logger.warn({ event: "moderate.not_found", message: "Question not found", userId: user.id, metadata: { questionId } });
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const { data: rawProfile } = await supabase
+    const { data: rawProfile } = await service
       .from("profiles")
       .select("id")
       .eq("auth_user_id", user.id)
@@ -72,36 +81,51 @@ export async function POST(req: Request) {
     const profile = rawProfile as unknown as { id: string } | null;
 
     if (!profile || question.uploaded_by !== profile.id) {
+      logger.warn({ event: "moderate.forbidden", message: "Non-owner attempted to moderate question", userId: user.id, metadata: { questionId, ownerId: question.uploaded_by } });
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (question.status !== "pending_review") {
+      logger.info({ event: "moderate.already_processed", message: "Question already processed", userId: user.id, metadata: { questionId, status: question.status } });
       return NextResponse.json(
         { error: "Question already processed" },
         { status: 409 },
       );
     }
 
-    console.log("=== MODERATE: fetching file from pending ===", question.file_url);
     const { data: fileData } = await service.storage
       .from("pending")
       .download(question.file_url);
 
-    console.log("=== MODERATE: fileData ===", fileData ? "got blob" : "null");
     if (!fileData) {
+      logger.error({ event: "moderate.file_missing", message: "File not found in pending bucket", userId: user.id, metadata: { questionId, fileUrl: question.file_url } });
       return NextResponse.json(
         { error: "File not found in pending bucket" },
         { status: 404 },
       );
     }
 
-    console.log("=== MODERATE: converting to base64 ===");
+    const fileValidation = validateFile(fileData.type, fileData.size);
+    if (!fileValidation.valid) {
+      logger.info({ event: "moderate.file_rejected", message: "File rejected by validation", userId: user.id, metadata: { questionId, reason: fileValidation.error } });
+      await service.storage.from("pending").remove([question.file_url]);
+      await service
+        .from("past_questions")
+        .update({
+          status: "rejected",
+          ai_rejection_reason: fileValidation.error,
+        } as never)
+        .eq("id", questionId);
+      return NextResponse.json(
+        { pass: false, reason: fileValidation.error },
+        { status: 200 },
+      );
+    }
+
     const bytes = new Uint8Array(await fileData.arrayBuffer());
     const binary = Array.from(bytes).map((b) => String.fromCharCode(b)).join("");
     const fileBase64 = btoa(binary);
-    console.log("=== MODERATE: base64 length ===", fileBase64.length);
 
-    console.log("=== MODERATE: calling Gemini ===");
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash" });
 
@@ -122,7 +146,6 @@ Evaluate all four criteria. Fail if ANY single criterion is not met:
 Keep the reason field under 20 words. If pass is true, reason can be empty string.
 Return JSON only.`;
 
-    console.log("=== MODERATE: sending to Gemini ===");
     const result = await model.generateContent([
       {
         inlineData: {
@@ -134,7 +157,6 @@ Return JSON only.`;
       prompt,
     ]);
 
-    console.log("=== MODERATE: Gemini responded ===");
     const raw = result.response.text().trim();
     let verdict: { pass: boolean; reason: string };
 
@@ -151,6 +173,7 @@ Return JSON only.`;
 
       await service.storage.from("pending").remove([question.file_url]);
 
+      logger.error({ event: "moderate.gemini_parse_failed", message: "Failed to parse Gemini response", userId: user.id, metadata: { questionId, raw } });
       return NextResponse.json(
         { pass: false, reason: "Review could not be completed — please re-upload" },
         { status: 200 },
@@ -166,6 +189,7 @@ Return JSON only.`;
         .upload(newPath, fileData);
 
       if (uploadError) {
+        logger.error({ event: "moderate.upload_failed", message: "Failed to move file to approved bucket", userId: user.id, metadata: { questionId, error: uploadError.message } });
         return NextResponse.json(
           { error: "Failed to move file to approved" },
           { status: 500 },
@@ -183,13 +207,14 @@ Return JSON only.`;
         .eq("id", questionId);
 
       if (updateError) {
-        console.error("=== MODERATE: failed to update question status ===", updateError);
+        logger.error({ event: "moderate.update_failed", message: "Failed to update question status after approval", userId: user.id, metadata: { questionId, error: updateError.message } });
         return NextResponse.json(
           { error: "Failed to publish question" },
           { status: 500 },
         );
       }
 
+      logger.info({ event: "moderate.passed", message: "Question passed moderation", userId: user.id, metadata: { questionId }, durationMs: Date.now() - start });
       return NextResponse.json({ pass: true, reason: "" });
     } else {
       await service.storage.from("pending").remove([question.file_url]);
@@ -202,11 +227,12 @@ Return JSON only.`;
         } as never)
         .eq("id", questionId);
 
+      logger.info({ event: "moderate.rejected", message: "Question rejected by AI", userId: user.id, metadata: { questionId, reason: verdict.reason }, durationMs: Date.now() - start });
       return NextResponse.json({ pass: false, reason: verdict.reason });
     }
   } catch (error) {
     const msg = error instanceof Error ? `${error.name}: ${error.message}\n${error.stack}` : String(error);
-    console.error("=== MODERATE ERROR ===", msg);
+    logger.error({ event: "moderate.error", message: "Unexpected moderation error", error: msg, durationMs: Date.now() - start });
     return NextResponse.json(
       { error: "Internal server error", detail: msg },
       { status: 500 },

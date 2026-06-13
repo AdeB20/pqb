@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { redirect } from "next/navigation";
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminRegisterForm } from "@/components/admin/AdminRegisterForm";
 
-export default async function AdminDashboardPage({
+export default async function AdminRootPage({
   params,
 }: {
   params: { secret: string };
@@ -23,12 +22,7 @@ export default async function AdminDashboardPage({
     const profile = rawProfile as unknown as { role: string } | null;
 
     if (profile?.role === "super_admin") {
-      return (
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
-          <AdminDashboard secret={params.secret} />
-        </div>
-      );
+      redirect(`/admin/${params.secret}/dashboard`);
     }
   }
 

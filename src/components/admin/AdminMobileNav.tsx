@@ -7,7 +7,9 @@ export function AdminMobileNav({ secret }: { secret: string }) {
   const [open, setOpen] = useState(false);
 
   const links = [
-    { href: `/admin/${secret}`, label: "Dashboard" },
+    { href: `/admin/${secret}/dashboard`, label: "Dashboard" },
+    { href: `/admin/${secret}/admins`, label: "Admins" },
+    { href: `/admin/${secret}/data`, label: "Data" },
     { href: `/admin/${secret}/questions`, label: "Questions" },
     { href: `/admin/${secret}/students`, label: "Students" },
     { href: `/admin/${secret}/settings`, label: "Settings" },

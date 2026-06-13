@@ -131,7 +131,7 @@ export function RegisterForm() {
           type="email"
           {...register("email")}
           onBlur={(e) => {
-            const domain = process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN || "@uni.edu.ng";
+            const domain = process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN || "";
             if (e.target.value && !e.target.value.endsWith(domain)) {
               setError(`Only ${domain} emails are accepted`);
             } else {

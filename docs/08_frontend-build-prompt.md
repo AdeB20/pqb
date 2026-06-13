@@ -49,7 +49,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=         # server-only — never in client bundle
 GEMINI_API_KEY=                    # server-only
-NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN=@uni.edu.ng
+NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN=@your-university-domain.edu.ng
 ADMIN_SECRET_PATH=                 # the hidden admin route slug
 ```
 

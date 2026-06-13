@@ -95,7 +95,7 @@ Faculty
 - Approval of an upload automatically unlocks the account via database trigger
 
 ### 5.4 Domain-Locked Registration
-- Only emails matching the university domain (e.g. `@uni.edu.ng`) are accepted
+- Only emails matching the university domain (e.g. `@your-university-domain.edu.ng`) are accepted
 - OTP is sent to the university email — verifying the student is a real enrolled person
 - Matric number is stored as an additional identity anchor
 - No manual approval step — the email domain is the gatekeeper

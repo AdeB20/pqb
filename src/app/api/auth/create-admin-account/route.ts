@@ -1,17 +1,49 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { checkRateLimit } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
 
 export async function POST(req: Request) {
+  const start = Date.now();
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+
   try {
     const { email, password, fullName } = await req.json();
-    if (!email || !password || password.length < 8 || !fullName) {
+    if (!email || !password || !fullName) {
+      logger.warn({ event: "admin.create.invalid_input", message: "Missing admin registration fields", ip });
       return NextResponse.json(
-        { error: "Email, full name, and password (min 8 chars) required" },
+        { error: "Email, full name, and password required" },
         { status: 400 },
       );
     }
 
+    if (!PASSWORD_REGEX.test(password)) {
+      logger.warn({ event: "admin.create.weak_password", message: "Admin password too weak", ip, email });
+      return NextResponse.json(
+        {
+          error:
+            "Password must be at least 8 characters with uppercase, lowercase, number, and special character",
+        },
+        { status: 400 },
+      );
+    }
+
+    const rateKey = `create-admin:${ip}`;
+    if (!checkRateLimit(rateKey, 3, 60_000)) {
+      logger.warn({ event: "admin.create.rate_limited", message: "Admin creation rate limit hit", ip });
+      return NextResponse.json(
+        { error: "Too many admin creation attempts. Please wait." },
+        { status: 429 },
+      );
+    }
+
     if (email !== "ifeoluwa.bankole05@gmail.com") {
+      logger.warn({ event: "admin.create.wrong_email", message: "Non-admin email attempted admin registration", ip, email });
       return NextResponse.json(
         { error: "Only the designated admin email can register" },
         { status: 403 },
@@ -28,6 +60,7 @@ export async function POST(req: Request) {
       .single();
 
     if (existing) {
+      logger.warn({ event: "admin.create.already_exists", message: "Admin already registered", ip, email });
       return NextResponse.json(
         { error: "Admin already registered. Go to login." },
         { status: 409 },
@@ -41,6 +74,7 @@ export async function POST(req: Request) {
       .single();
 
     if (!deptRow) {
+      logger.warn({ event: "admin.create.no_department", message: "No departments exist for admin registration", ip });
       return NextResponse.json(
         { error: "No departments exist yet. Seed a department first via /settings" },
         { status: 400 },
@@ -55,7 +89,7 @@ export async function POST(req: Request) {
     });
 
     if (createError) {
-      console.error("create-admin error:", createError);
+      logger.error({ event: "admin.create.user_failed", message: "Supabase admin user creation failed", ip, email, error: createError.message });
       return NextResponse.json(
         { error: "Failed to create admin account" },
         { status: 500 },
@@ -77,9 +111,11 @@ export async function POST(req: Request) {
       } as never);
     }
 
+    logger.info({ event: "admin.create.success", message: "Admin account created", ip, email, durationMs: Date.now() - start });
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("create-admin-account error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ event: "admin.create.error", message: "Unexpected error", ip, error: msg, durationMs: Date.now() - start });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

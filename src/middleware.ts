@@ -3,6 +3,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const { pathname, protocol } = request.nextUrl;
+
+  // ── HTTPS redirect (production only) ──
+  if (
+    process.env.NODE_ENV === "production" &&
+    protocol === "http:" &&
+    !request.headers.get("x-forwarded-proto")?.startsWith("https")
+  ) {
+    const httpsUrl = request.nextUrl.clone();
+    httpsUrl.protocol = "https";
+    return NextResponse.redirect(httpsUrl);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -30,7 +43,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
   const adminSecret = process.env.ADMIN_SECRET_PATH;
   const isAdminLogin =
     adminSecret && pathname === `/admin/${adminSecret}/login`;
@@ -49,6 +61,10 @@ export async function middleware(request: NextRequest) {
 
   if (isStudentRoute || isUploadRoute) {
     if (!user) {
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+      console.log(
+        `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.unauthorized", msg: "Redirected unauthenticated user to login", ip, p: pathname })}`,
+      );
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
@@ -60,6 +76,9 @@ export async function middleware(request: NextRequest) {
         .single();
 
       if (profile?.is_locked) {
+        console.log(
+          `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "info", ev: "auth.locked", msg: "Redirected locked user to upload", uid: user.id, p: pathname })}`,
+        );
         return NextResponse.redirect(new URL("/upload?locked=true", request.url));
       }
     }
@@ -70,6 +89,9 @@ export async function middleware(request: NextRequest) {
       const loginUrl = adminSecret
         ? `/admin/${adminSecret}/login`
         : "/login";
+      console.log(
+        `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.admin_unauthorized", msg: "Redirected unauthenticated user from admin route", ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown", p: pathname })}`,
+      );
       return NextResponse.redirect(new URL(loginUrl, request.url));
     }
 
@@ -80,6 +102,9 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (profile?.role !== "super_admin") {
+      console.log(
+        `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.admin_forbidden", msg: "Non-admin user attempted admin route", uid: user.id, p: pathname })}`,
+      );
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }

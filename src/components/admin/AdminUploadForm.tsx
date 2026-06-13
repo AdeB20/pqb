@@ -16,14 +16,12 @@ export function AdminUploadForm({ secret: _secret }: { secret: string }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from("courses")
-      .select("id, code, title, level")
-      .order("code")
-      .then(({ data }) => {
-        setCourses((data as unknown as { id: string; code: string; title: string; level: number }[]) ?? []);
+    fetch("/api/admin?action=courses")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.courses) setCourses(data.courses);
       });
-  }, [supabase]);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,16 +41,6 @@ export function AdminUploadForm({ secret: _secret }: { secret: string }) {
       const ext = fileType === "pdf" ? "pdf" : "jpg";
       const fileName = `${crypto.randomUUID()}.${ext}`;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("auth_user_id", user.id)
-        .single();
-      if (!profile) throw new Error("Profile not found");
-
       const { error: uploadError } = await supabase.storage
         .from("approved")
         .upload(fileName, file, {
@@ -61,19 +49,21 @@ export function AdminUploadForm({ secret: _secret }: { secret: string }) {
         });
       if (uploadError) throw new Error("Upload failed: " + uploadError.message);
 
-      const { error: dbError } = await supabase.from("past_questions").insert({
-        course_id: courseId,
-        uploaded_by: (profile as unknown as { id: string }).id,
-        level: parseInt(level),
-        file_url: fileName,
-        file_type: fileType,
-        year: parseInt(year),
-        semester,
-        exam_type: examType,
-        status: "published",
-      } as never);
+      const formData = new FormData();
+      formData.set("course_id", courseId);
+      formData.set("year", year);
+      formData.set("semester", semester);
+      formData.set("exam_type", examType);
+      formData.set("level", level);
+      formData.set("file_url", fileName);
+      formData.set("file_type", fileType);
 
-      if (dbError) throw new Error("Database error: " + dbError.message);
+      const res = await fetch("/api/admin?action=admin-upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to publish question");
 
       setMessage("Question published successfully");
       setFile(null);

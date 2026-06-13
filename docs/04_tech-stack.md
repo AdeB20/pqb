@@ -124,7 +124,7 @@ SUPABASE_SERVICE_ROLE_KEY=        # server-only, never exposed to client
 GEMINI_API_KEY=                   # server-only
 
 # App config
-NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN=@uni.edu.ng
+NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN=@your-university-domain.edu.ng
 ADMIN_SECRET_PATH=                # the hidden admin route slug
 ```
 

@@ -1,30 +1,191 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { logger } from "@/lib/logger";
 
-export async function POST(req: NextRequest) {
+async function assertAdmin() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const service = createServiceClient();
+  const { data: rawProfile } = await service
+    .from("profiles")
+    .select("role")
+    .eq("auth_user_id", user.id)
+    .single();
+  const profile = rawProfile as unknown as { role: string } | null;
+  if (profile?.role !== "super_admin") return null;
+  return { user, service, supabase };
+}
+
+export async function GET(req: NextRequest) {
+  const start = Date.now();
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   try {
-    const supabase = createClient();
-    const service = createServiceClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    const session = await assertAdmin();
+    if (!session) {
+      logger.warn({ event: "admin.unauthorized", message: "Unauthorized admin GET", ip, path: req.nextUrl.pathname });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { service } = session;
+    const action = req.nextUrl.searchParams.get("action");
 
-    const { data: rawProfile } = await service
-      .from("profiles")
-      .select("role")
-      .eq("auth_user_id", user.id)
-      .single();
-    const profile = rawProfile as unknown as { role: string } | null;
+    switch (action) {
+      case "stats": {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const [{ count: total }, { count: published }, { count: suspended }, { count: students }, { count: pending }, { count: todayUploads }, { count: totalFlags }] = await Promise.all([
+          service.from("past_questions").select("*", { count: "exact", head: true }),
+          service.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "published"),
+          service.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "suspended"),
+          service.from("profiles").select("*", { count: "exact", head: true }).eq("role", "student"),
+          service.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "pending_review"),
+          service.from("past_questions").select("*", { count: "exact", head: true }).gte("created_at", today.toISOString()),
+          service.from("flags").select("*", { count: "exact", head: true }),
+        ]);
+        const flagRate = total && total > 0 ? ((totalFlags ?? 0) / total) * 100 : 0;
 
-    if (profile?.role !== "super_admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const { data: rawCourses } = await service
+          .from("past_questions")
+          .select("course_id, courses!inner(code)")
+          .eq("status", "published");
+        const courseCounts: Record<string, { code: string; count: number }> = {};
+        if (rawCourses) {
+          for (const row of rawCourses as unknown as Array<{ course_id: string; courses: { code: string } }>) {
+            const code = row.courses?.code || row.course_id.slice(0, 8);
+            if (!courseCounts[code]) courseCounts[code] = { code, count: 0 };
+            courseCounts[code].count++;
+          }
+        }
+        const topCourses = Object.values(courseCounts).sort((a, b) => b.count - a.count).slice(0, 5);
+
+        const { data: rawUploads } = await service
+          .from("past_questions")
+          .select("uploaded_by, profiles!inner(full_name)")
+          .eq("status", "published");
+        const studentCounts: Record<string, { name: string; count: number }> = {};
+        if (rawUploads) {
+          for (const row of rawUploads as unknown as Array<{ uploaded_by: string; profiles: { full_name: string } }>) {
+            const name = row.profiles?.full_name || "Unknown";
+            if (!studentCounts[name]) studentCounts[name] = { name, count: 0 };
+            studentCounts[name].count++;
+          }
+        }
+        const topStudents = Object.values(studentCounts).sort((a, b) => b.count - a.count).slice(0, 5);
+
+        const { data: rawFlagCourses } = await service
+          .from("past_questions")
+          .select("id, flag_count, courses!inner(code)")
+          .eq("status", "published");
+        const flagRates: Record<string, { code: string; total: number; flags: number }> = {};
+        if (rawFlagCourses) {
+          for (const row of rawFlagCourses as unknown as Array<{ id: string; flag_count: number; courses: { code: string } }>) {
+            const code = row.courses?.code || "?";
+            if (!flagRates[code]) flagRates[code] = { code, total: 0, flags: 0 };
+            flagRates[code].total++;
+            flagRates[code].flags += row.flag_count;
+          }
+        }
+        const flaggedCourses = Object.values(flagRates).map((c) => ({ code: c.code, rate: c.total > 0 ? (c.flags / c.total) * 100 : 0 })).sort((a, b) => b.rate - a.rate).slice(0, 5);
+
+        const weeks: { week: string; count: number }[] = [];
+        for (let i = 7; i >= 0; i--) {
+          const ws = new Date();
+          ws.setDate(ws.getDate() - ws.getDay() - i * 7);
+          ws.setHours(0, 0, 0, 0);
+          const we = new Date(ws);
+          we.setDate(we.getDate() + 7);
+          const { count } = await service.from("past_questions").select("*", { count: "exact", head: true }).gte("created_at", ws.toISOString()).lt("created_at", we.toISOString());
+          weeks.push({ week: `${ws.getMonth() + 1}/${ws.getDate()}`, count: count ?? 0 });
+        }
+
+        return NextResponse.json({
+          stats: { totalQuestions: total ?? 0, publishedQuestions: published ?? 0, suspendedQuestions: suspended ?? 0, totalStudents: students ?? 0, pendingReview: pending ?? 0, uploadsToday: todayUploads ?? 0, flagRate },
+          topCourses,
+          topStudents,
+          flaggedCourses,
+          weeklyTrend: weeks,
+        });
+      }
+
+      case "courses": {
+        const { data: list } = await service.from("courses").select("id, code, title, level").order("code");
+        return NextResponse.json({ courses: list ?? [] });
+      }
+
+      case "queue": {
+        const { data: raw } = await service
+          .from("past_questions")
+          .select("id, course_id, year, semester, exam_type, file_type, courses(code), status, created_at")
+          .in("status", ["pending_review", "suspended"])
+          .order("created_at", { ascending: false });
+        return NextResponse.json({ questions: raw ?? [] });
+      }
+
+      case "students": {
+        const { data: raw } = await service
+          .from("profiles")
+          .select("id, full_name, matric_number, is_locked, current_level, created_at")
+          .eq("role", "student")
+          .order("created_at", { ascending: false });
+        return NextResponse.json({ students: raw ?? [] });
+      }
+
+      case "faculties": {
+        const { data: list } = await service.from("faculties").select("id, name, slug").order("name");
+        return NextResponse.json({ faculties: list ?? [] });
+      }
+
+      case "departments": {
+        const rawData = await service.from("departments").select("name, faculties!inner(name)").order("name") as never;
+        const list = rawData as unknown as { data: { name: string; faculties: { name: string } }[] | null };
+        return NextResponse.json({ departments: (list.data ?? []).map((d) => ({ name: d.name, faculty_name: d.faculties?.name || "" })) });
+      }
+
+      case "list-admins": {
+        const { data: adminProfiles } = await service
+          .from("profiles")
+          .select("id, auth_user_id, full_name, created_at")
+          .eq("role", "super_admin")
+          .order("created_at");
+        const { data: authUsers } = await service.auth.admin.listUsers({ perPage: 1000 });
+        const emailMap = new Map<string, string>();
+        if (authUsers?.users) {
+          for (const u of authUsers.users) {
+            if (u.email) emailMap.set(u.id, u.email);
+          }
+        }
+        const admins = (adminProfiles ?? []).map((p) => {
+          const profile = p as unknown as { id: string; auth_user_id: string; full_name: string; created_at: string };
+          return { id: profile.id, full_name: profile.full_name, email: emailMap.get(profile.auth_user_id) || "Unknown", created_at: profile.created_at };
+        });
+        return NextResponse.json({ admins });
+      }
+
+      default:
+        logger.warn({ event: "admin.unknown_action", message: "Unknown admin GET action", ip, metadata: { action } });
+        return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ event: "admin.get_error", message: "Admin GET API error", error: msg, durationMs: Date.now() - start });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
 
+export async function POST(req: NextRequest) {
+  const start = Date.now();
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
+  try {
+    const session = await assertAdmin();
+    if (!session) {
+      logger.warn({ event: "admin.unauthorized", message: "Unauthorized admin API call", ip, path: req.nextUrl.pathname });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const { user, service } = session;
     const action = req.nextUrl.searchParams.get("action");
 
     let formData: FormData;
@@ -43,6 +204,7 @@ export async function POST(req: NextRequest) {
         const slug = name.toLowerCase().replace(/\s+/g, "-");
         const { error } = await service.from("faculties").insert({ name, slug } as never);
         if (error) throw error;
+        logger.info({ event: "admin.seed_faculty", message: "Faculty seeded", userId: user.id, metadata: { name } });
         return NextResponse.json({ success: true });
       }
 
@@ -60,6 +222,7 @@ export async function POST(req: NextRequest) {
           .from("departments")
           .insert({ name, slug, faculty_id } as never);
         if (error) throw error;
+        logger.info({ event: "admin.seed_department", message: "Department seeded", userId: user.id, metadata: { name, faculty_id } });
         return NextResponse.json({ success: true });
       }
 
@@ -92,6 +255,7 @@ export async function POST(req: NextRequest) {
           }));
           await service.from("department_courses").insert(links as never);
         }
+        logger.info({ event: "admin.seed_course", message: "Course seeded", userId: user.id, metadata: { code, title } });
         return NextResponse.json({ success: true });
       }
 
@@ -105,6 +269,7 @@ export async function POST(req: NextRequest) {
           .update({ status: "published" } as never)
           .eq("id", id);
         if (error) throw error;
+        logger.info({ event: "admin.restore_question", message: "Question restored", userId: user.id, metadata: { questionId: id } });
         return NextResponse.json({ success: true });
       }
 
@@ -127,6 +292,7 @@ export async function POST(req: NextRequest) {
           .delete()
           .eq("id", id);
         if (error) throw error;
+        logger.info({ event: "admin.delete_question", message: "Question deleted", userId: user.id, metadata: { questionId: id } });
         return NextResponse.json({ success: true });
       }
 
@@ -140,6 +306,7 @@ export async function POST(req: NextRequest) {
           .update({ is_locked: true } as never)
           .eq("id", id);
         if (error) throw error;
+        logger.info({ event: "admin.lock_student", message: "Student locked", userId: user.id, metadata: { studentId: id } });
         return NextResponse.json({ success: true });
       }
 
@@ -153,6 +320,7 @@ export async function POST(req: NextRequest) {
           .update({ is_locked: false } as never)
           .eq("id", id);
         if (error) throw error;
+        logger.info({ event: "admin.unlock_student", message: "Student unlocked", userId: user.id, metadata: { studentId: id } });
         return NextResponse.json({ success: true });
       }
 
@@ -177,6 +345,7 @@ export async function POST(req: NextRequest) {
           .update({ upload_obligation_days, lockout_enabled } as never)
           .eq("id", settingsId);
         if (error) throw error;
+        logger.info({ event: "admin.update_settings", message: "Settings updated", userId: user.id, metadata: { upload_obligation_days, lockout_enabled } });
         return NextResponse.json({ success: true });
       }
 
@@ -188,11 +357,120 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ departments: deptList ?? [] });
       }
 
+      case "invite-admin": {
+        const inviteEmail = formData.get("email") as string;
+        const inviteName = formData.get("fullName") as string;
+        if (!inviteEmail || !inviteName) {
+          return NextResponse.json({ error: "Email and full name required" }, { status: 400 });
+        }
+
+        const tempPassword = crypto.randomUUID() + "Aa1!";
+        const { data: createdUser, error: createErr } = await service.auth.admin.createUser({
+          email: inviteEmail,
+          password: tempPassword,
+          email_confirm: true,
+        });
+
+        if (createErr || !createdUser?.user) {
+          logger.error({ event: "admin.invite.create_failed", message: "Failed to create user", userId: user.id, metadata: { email: inviteEmail, error: createErr?.message } });
+          return NextResponse.json({ error: createErr?.message || "Failed to create account" }, { status: 500 });
+        }
+
+        const { data: deptRow } = await service.from("departments").select("id").limit(1).single();
+        const deptId = deptRow ? (deptRow as unknown as { id: string }).id : null;
+
+        await service.from("profiles").insert({
+          auth_user_id: createdUser.user.id,
+          full_name: inviteName,
+          matric_number: `ADMIN${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          department_id: deptId || "",
+          current_level: 100,
+          role: "super_admin",
+        } as never);
+
+        const { data: linkData } = await service.auth.admin.generateLink({
+          type: "recovery",
+          email: inviteEmail,
+          options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin}/admin/${req.nextUrl.pathname.split("/")[2]}/login` },
+        });
+
+        const recoveryLink = linkData?.properties?.action_link || null;
+
+        const resendRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "UniPastQ <noreply@devalyze.space>",
+            to: inviteEmail,
+            subject: "You've been invited as an admin on UniPastQ",
+            html: `<h2>Admin Invitation</h2>
+<p>You've been invited as an administrator on <strong>UniPastQ</strong>.</p>
+${recoveryLink ? `<p>Click the link below to set up your password:</p>
+<p style="text-align:center;padding:16px"><a href="${recoveryLink}" style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Set up your password</a></p>
+<p style="color:#666;font-size:13px">This link expires in 24 hours.</p>` : `<p>Your temporary password is: <code style="font-size:16px;background:#f3f4f6;padding:4px 8px;border-radius:4px">${tempPassword}</code></p>
+<p>After logging in, please change your password immediately.</p>`}
+<p style="color:#666;font-size:13px">Once you've set your password, log in at the admin portal to get started.</p>`,
+          }),
+        });
+
+        if (!resendRes.ok) {
+          const errBody = await resendRes.text();
+          logger.error({ event: "admin.invite.email_failed", message: "Failed to send invitation email", userId: user.id, metadata: { email: inviteEmail, error: errBody } });
+        }
+
+        logger.info({ event: "admin.invite.sent", message: "Admin invitation sent", userId: user.id, metadata: { email: inviteEmail, name: inviteName } });
+        return NextResponse.json({ success: true });
+      }
+
+      case "admin-upload": {
+        const course_id = formData.get("course_id") as string;
+        const year = parseInt(formData.get("year") as string);
+        const semester = formData.get("semester") as string;
+        const exam_type = formData.get("exam_type") as string;
+        const level = parseInt(formData.get("level") as string);
+        const file_url = formData.get("file_url") as string;
+        const file_type = formData.get("file_type") as string;
+        if (!course_id || !year || !semester || !file_url || !file_type) {
+          return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+        const { data: rawProfile } = await service
+          .from("profiles")
+          .select("id")
+          .eq("auth_user_id", user.id)
+          .single();
+        const profileId = (rawProfile as unknown as { id: string } | null)?.id;
+        if (!profileId) {
+          return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+        }
+        const { error: insertErr } = await service.from("past_questions").insert({
+          course_id,
+          uploaded_by: profileId,
+          level,
+          file_url,
+          file_type,
+          year,
+          semester,
+          exam_type: exam_type || "examination",
+          status: "published",
+        } as never);
+        if (insertErr) {
+          logger.error({ event: "admin.upload_insert_failed", message: "Failed to insert question", userId: user.id, metadata: { error: insertErr.message } });
+          return NextResponse.json({ error: insertErr.message }, { status: 500 });
+        }
+        logger.info({ event: "admin.upload", message: "Admin uploaded question", userId: user.id, metadata: { course_id, file_url } });
+        return NextResponse.json({ success: true });
+      }
+
       default:
+        logger.warn({ event: "admin.unknown_action", message: "Unknown admin action", userId: user.id, metadata: { action } });
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }
   } catch (error) {
-    console.error("Admin error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ event: "admin.error", message: "Admin API error", error: msg, durationMs: Date.now() - start });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

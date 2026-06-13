@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 const statIcons: Record<string, JSX.Element> = {
   "Total Questions": (
@@ -42,7 +41,6 @@ const statIcons: Record<string, JSX.Element> = {
 };
 
 export function AdminDashboard({ secret: _secret }: { secret: string }) {
-  const supabase = createClient();
   const [stats, setStats] = useState({
     totalQuestions: 0,
     publishedQuestions: 0,
@@ -61,87 +59,17 @@ export function AdminDashboard({ secret: _secret }: { secret: string }) {
 
   useEffect(() => {
     async function load() {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const [{ count: total }, { count: published }, { count: suspended }, { count: students }, { count: pending }, { count: todayUploads }, { count: totalFlags }] = await Promise.all([
-        supabase.from("past_questions").select("*", { count: "exact", head: true }),
-        supabase.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "published"),
-        supabase.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "suspended"),
-        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "student"),
-        supabase.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "pending_review"),
-        supabase.from("past_questions").select("*", { count: "exact", head: true }).gte("created_at", today.toISOString()),
-        supabase.from("flags").select("*", { count: "exact", head: true }),
-      ]);
-
-      setStats({
-        totalQuestions: total ?? 0,
-        publishedQuestions: published ?? 0,
-        suspendedQuestions: suspended ?? 0,
-        totalStudents: students ?? 0,
-        pendingReview: pending ?? 0,
-        uploadsToday: todayUploads ?? 0,
-        flagRate: total && total > 0 ? ((totalFlags ?? 0) / total) * 100 : 0,
-      });
-
-      const { data: rawCourses } = await supabase
-        .from("past_questions")
-        .select("course_id, courses!inner(code)")
-        .eq("status", "published");
-      const courseCounts: Record<string, { code: string; count: number }> = {};
-      if (rawCourses) {
-        for (const row of rawCourses as unknown as Array<{ course_id: string; courses: { code: string } }>) {
-          const code = row.courses?.code || row.course_id.slice(0, 8);
-          if (!courseCounts[code]) courseCounts[code] = { code, count: 0 };
-          courseCounts[code].count++;
-        }
-      }
-      setTopCourses(Object.values(courseCounts).sort((a, b) => b.count - a.count).slice(0, 5));
-
-      const { data: rawUploads } = await supabase
-        .from("past_questions")
-        .select("uploaded_by, profiles!inner(full_name)")
-        .eq("status", "published");
-      const studentCounts: Record<string, { name: string; count: number }> = {};
-      if (rawUploads) {
-        for (const row of rawUploads as unknown as Array<{ uploaded_by: string; profiles: { full_name: string } }>) {
-          const name = row.profiles?.full_name || "Unknown";
-          if (!studentCounts[name]) studentCounts[name] = { name, count: 0 };
-          studentCounts[name].count++;
-        }
-      }
-      setTopStudents(Object.values(studentCounts).sort((a, b) => b.count - a.count).slice(0, 5));
-
-      const { data: rawFlagCourses } = await supabase
-        .from("past_questions")
-        .select("id, flag_count, courses!inner(code)")
-        .eq("status", "published");
-      const flagRates: Record<string, { code: string; total: number; flags: number }> = {};
-      if (rawFlagCourses) {
-        for (const row of rawFlagCourses as unknown as Array<{ id: string; flag_count: number; courses: { code: string } }>) {
-          const code = row.courses?.code || "?";
-          if (!flagRates[code]) flagRates[code] = { code, total: 0, flags: 0 };
-          flagRates[code].total++;
-          flagRates[code].flags += row.flag_count;
-        }
-      }
-      setFlaggedCourses(Object.values(flagRates).map((c) => ({ code: c.code, rate: c.total > 0 ? (c.flags / c.total) * 100 : 0 })).sort((a, b) => b.rate - a.rate).slice(0, 5));
-
-      const weeks: { week: string; count: number }[] = [];
-      for (let i = 7; i >= 0; i--) {
-        const start = new Date();
-        start.setDate(start.getDate() - start.getDay() - i * 7);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 7);
-        const { count } = await supabase.from("past_questions").select("*", { count: "exact", head: true }).gte("created_at", start.toISOString()).lt("created_at", end.toISOString());
-        weeks.push({ week: `${start.getMonth() + 1}/${start.getDate()}`, count: count ?? 0 });
-      }
-      setWeeklyTrend(weeks);
+      const res = await fetch("/api/admin?action=stats");
+      const data = await res.json();
+      if (data.stats) setStats(data.stats);
+      if (data.topCourses) setTopCourses(data.topCourses);
+      if (data.topStudents) setTopStudents(data.topStudents);
+      if (data.flaggedCourses) setFlaggedCourses(data.flaggedCourses);
+      if (data.weeklyTrend) setWeeklyTrend(data.weeklyTrend);
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, []);
 
   const cards = [
     { label: "Total Questions", value: stats.totalQuestions, key: "Total Questions" },

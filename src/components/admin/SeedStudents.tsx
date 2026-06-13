@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 interface Student {
   id: string;
@@ -13,7 +12,6 @@ interface Student {
 }
 
 export function StudentsTable({ secret: _secret }: { secret: string }) {
-  const supabase = createClient();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -21,16 +19,13 @@ export function StudentsTable({ secret: _secret }: { secret: string }) {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const { data: raw } = await supabase
-        .from("profiles")
-        .select("id, full_name, matric_number, is_locked, current_level, created_at")
-        .eq("role", "student")
-        .order("created_at", { ascending: false });
-      setStudents((raw as unknown as Student[]) ?? []);
+      const res = await fetch("/api/admin?action=students");
+      const data = await res.json();
+      setStudents(data.students ?? []);
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, []);
 
   async function toggleLock(student: Student) {
     const action = student.is_locked ? "unlock-student" : "lock-student";

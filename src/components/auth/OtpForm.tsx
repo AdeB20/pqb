@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export function OtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
   const email = searchParams.get("email") || "";
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -73,21 +71,9 @@ export function OtpForm() {
       const params = new URLSearchParams({ email });
       router.push(`/register/set-password?${params}`);
     } else {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: email,
-      });
-
-      if (signInError || !data?.user) {
-        setError(signInError?.message || "Failed to sign in");
-        setShakeKey((k) => k + 1);
-        setIsVerifying(false);
-        return;
-      }
-
-      window.location.href = "/dashboard";
+      router.push(`/login?verified=${encodeURIComponent(email)}`);
     }
-  }, [otp, email, supabase, router]);
+  }, [otp, email, router]);
 
   useEffect(() => {
     if (otp.every((d) => d !== "")) {

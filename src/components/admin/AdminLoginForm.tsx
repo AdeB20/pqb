@@ -45,7 +45,7 @@ export function AdminLoginForm({ secret }: { secret: string }) {
       return;
     }
 
-    window.location.href = `/admin/${secret}`;
+    window.location.href = `/admin/${secret}/dashboard`;
   };
 
   return (

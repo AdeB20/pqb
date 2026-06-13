@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 interface QueuedQuestion {
   id: string;
@@ -16,7 +15,6 @@ interface QueuedQuestion {
 }
 
 export function SuspendedQueue({ secret: _secret }: { secret: string }) {
-  const supabase = createClient();
   const [questions, setQuestions] = useState<QueuedQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,16 +22,13 @@ export function SuspendedQueue({ secret: _secret }: { secret: string }) {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const { data: raw } = await supabase
-        .from("past_questions")
-        .select("id, course_id, year, semester, exam_type, file_type, courses(code), status, created_at")
-        .in("status", ["pending_review", "suspended"])
-        .order("created_at", { ascending: false });
-      setQuestions((raw as unknown as QueuedQuestion[]) ?? []);
+      const res = await fetch("/api/admin?action=queue");
+      const data = await res.json();
+      setQuestions(data.questions ?? []);
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, []);
 
   async function handleAction(id: string, action: "restore" | "delete") {
     setError("");

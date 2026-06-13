@@ -1,31 +1,55 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { checkRateLimit, hashOtp } from "@/lib/utils";
+import { sendOtpSchema } from "@/lib/validations";
+import { logger } from "@/lib/logger";
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export async function POST(req: Request) {
+  const start = Date.now();
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+
   try {
     const body = await req.json();
-    const { email, fullName, matricNumber, departmentId, currentLevel } = body;
+    const parsed = sendOtpSchema.safeParse(body);
+    if (!parsed.success) {
+      logger.warn({ event: "otp.send.invalid_input", message: "Invalid OTP request body", ip, metadata: { errors: parsed.error.issues } });
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || "Invalid input" },
+        { status: 400 },
+      );
+    }
 
-    if (!email || typeof email !== "string") {
-      return NextResponse.json({ error: "Email required" }, { status: 400 });
+    const { email, fullName, matricNumber, departmentId, currentLevel } = parsed.data;
+
+    const rateKey = `send-otp:${ip}:${email.toLowerCase()}`;
+    if (!checkRateLimit(rateKey, 3, 60_000)) {
+      logger.warn({ event: "otp.send.rate_limited", message: "OTP rate limit hit", ip, email });
+      return NextResponse.json(
+        { error: "Too many OTP requests. Please wait before trying again." },
+        { status: 429 },
+      );
     }
 
     const supabase = createServiceClient();
     const code = generateCode();
+    const codeHash = hashOtp(code);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     const { error: dbError } = await supabase.from("pending_otps").insert({
       email,
-      code,
+      code: codeHash,
       expires_at: expiresAt,
     });
 
     if (dbError) {
-      console.error("send-otp db error:", dbError);
+      logger.error({ event: "otp.send.db_error", message: "Failed to store OTP", ip, email, error: dbError.message });
       return NextResponse.json({ error: "Failed to store OTP" }, { status: 500 });
     }
 
@@ -57,13 +81,15 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error("Resend API error:", errBody);
+      logger.error({ event: "otp.send.resend_error", message: "Resend API rejected email", ip, email, error: errBody });
       return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
     }
 
+    logger.info({ event: "otp.send.success", message: "OTP sent", ip, email, durationMs: Date.now() - start });
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("send-otp error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ event: "otp.send.error", message: "Unexpected error", ip, error: msg, durationMs: Date.now() - start });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

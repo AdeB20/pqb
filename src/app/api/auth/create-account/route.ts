@@ -1,11 +1,42 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { checkRateLimit } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
 
 export async function POST(req: Request) {
+  const start = Date.now();
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+
   try {
     const { email, password } = await req.json();
-    if (!email || !password || password.length < 8) {
-      return NextResponse.json({ error: "Email and password (min 8 chars) required" }, { status: 400 });
+    if (!email || !password) {
+      logger.warn({ event: "account.create.invalid_input", message: "Missing email or password", ip });
+      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      logger.warn({ event: "account.create.weak_password", message: "Password does not meet strength requirements", ip, email });
+      return NextResponse.json(
+        {
+          error:
+            "Password must be at least 8 characters with uppercase, lowercase, number, and special character",
+        },
+        { status: 400 },
+      );
+    }
+
+    const rateKey = `create-account:${ip}:${email.toLowerCase()}`;
+    if (!checkRateLimit(rateKey, 5, 60_000)) {
+      logger.warn({ event: "account.create.rate_limited", message: "Account creation rate limit hit", ip, email });
+      return NextResponse.json(
+        { error: "Too many account creation attempts. Please wait before trying again." },
+        { status: 429 },
+      );
     }
 
     const supabase = createServiceClient();
@@ -17,6 +48,7 @@ export async function POST(req: Request) {
       .single();
 
     if (!reg) {
+      logger.warn({ event: "account.create.no_pending", message: "No pending registration found", ip, email });
       return NextResponse.json({ error: "No pending registration" }, { status: 400 });
     }
 
@@ -33,15 +65,17 @@ export async function POST(req: Request) {
     });
 
     if (createError) {
-      console.error("create-account error:", createError);
+      logger.error({ event: "account.create.failed", message: "Failed to create account via Supabase admin", ip, email, error: createError.message });
       return NextResponse.json({ error: "Failed to create account" }, { status: 500 });
     }
 
     await supabase.from("pending_registrations").delete().eq("email", email);
 
+    logger.info({ event: "account.create.success", message: "Account created", ip, email, durationMs: Date.now() - start });
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("create-account error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error({ event: "account.create.error", message: "Unexpected error", ip, error: msg, durationMs: Date.now() - start });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
