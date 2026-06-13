@@ -1,0 +1,163 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+export function AdminUploadForm({ secret: _secret }: { secret: string }) {
+  const supabase = createClient();
+  const [courses, setCourses] = useState<{ id: string; code: string; title: string; level: number }[]>([]);
+  const [courseId, setCourseId] = useState("");
+  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [semester, setSemester] = useState("first");
+  const [examType, setExamType] = useState("examination");
+  const [level, setLevel] = useState("100");
+  const [file, setFile] = useState<File | null>(null);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("courses")
+      .select("id, code, title, level")
+      .order("code")
+      .then(({ data }) => {
+        setCourses((data as unknown as { id: string; code: string; title: string; level: number }[]) ?? []);
+      });
+  }, [supabase]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setMessage("");
+    if (!file || !courseId) {
+      setMessage("Select a course and file");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage("File must be under 10MB");
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const fileType = file.type === "application/pdf" ? "pdf" : "image";
+      const ext = fileType === "pdf" ? "pdf" : "jpg";
+      const fileName = `${crypto.randomUUID()}.${ext}`;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .single();
+      if (!profile) throw new Error("Profile not found");
+
+      const { error: uploadError } = await supabase.storage
+        .from("approved")
+        .upload(fileName, file, {
+          contentType: file.type,
+          cacheControl: "3600",
+        });
+      if (uploadError) throw new Error("Upload failed: " + uploadError.message);
+
+      const { error: dbError } = await supabase.from("past_questions").insert({
+        course_id: courseId,
+        uploaded_by: (profile as unknown as { id: string }).id,
+        level: parseInt(level),
+        file_url: fileName,
+        file_type: fileType,
+        year: parseInt(year),
+        semester,
+        exam_type: examType,
+        status: "published",
+      } as never);
+
+      if (dbError) throw new Error("Database error: " + dbError.message);
+
+      setMessage("Question published successfully");
+      setFile(null);
+      (e.target as HTMLFormElement).reset();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Error uploading");
+    }
+    setLoading(false);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Course</label>
+        <select value={courseId} onChange={(e) => setCourseId(e.target.value)} required
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
+          <option value="">Select course</option>
+          {courses.map((c) => (
+            <option key={c.id} value={c.id}>{c.code} — {c.title}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Year</label>
+          <input type="number" value={year} onChange={(e) => setYear(e.target.value)} required
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Level</label>
+          <select value={level} onChange={(e) => setLevel(e.target.value)}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
+            {[100, 200, 300, 400, 500, 600, 700].map((l) => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Semester</label>
+          <select value={semester} onChange={(e) => setSemester(e.target.value)}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
+            <option value="first">First</option>
+            <option value="second">Second</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Exam Type</label>
+          <select value={examType} onChange={(e) => setExamType(e.target.value)}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
+            <option value="examination">Examination</option>
+            <option value="mid_semester">Mid Semester</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">File (PDF or Image, max 10MB)</label>
+        <input
+          type="file"
+          accept=".pdf,image/*"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          required
+          className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-50 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100"
+        />
+      </div>
+
+      <button type="submit" disabled={loading}
+        className="w-full rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50">
+        {loading ? "Uploading..." : "Publish Question"}
+      </button>
+
+      {message && (
+        <div className={`rounded-lg px-4 py-3 text-sm ${
+          message === "Question published successfully"
+            ? "border border-success-200 bg-success-50 text-success-700"
+            : "border border-danger-200 bg-danger-50 text-danger-700"
+        }`}>
+          {message}
+        </div>
+      )}
+    </form>
+  );
+}
