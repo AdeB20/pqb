@@ -127,7 +127,12 @@ export async function POST(req: Request) {
     const fileBase64 = btoa(binary);
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash" });
+    const geminiModel = process.env.GEMINI_MODEL;
+    if (!geminiModel) {
+      logger.error({ event: "moderate.missing_model", message: "GEMINI_MODEL env var not set" });
+      return NextResponse.json({ error: "AI model not configured" }, { status: 500 });
+    }
+    const model = genAI.getGenerativeModel({ model: geminiModel });
 
     const prompt = `You are reviewing a university past question upload for a student platform.
 Analyze the attached file carefully and return ONLY a valid JSON object — no preamble, no markdown, no explanation:
