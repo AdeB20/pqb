@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { PdfViewer } from "@/components/question/PdfViewer";
 import { FlagModal } from "@/components/question/FlagModal";
+import { EnlargeableImage } from "@/components/question/EnlargeableImage";
 import { SolutionForm } from "@/components/solutions/SolutionForm";
 import { SolutionList } from "@/components/solutions/SolutionList";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +90,7 @@ export default async function QuestionPage({
     return {
       id: s.id,
       body: s.body,
+      file_url: s.file_url,
       submitted_by: s.submitted_by,
       author_name: profile?.full_name || "Anonymous",
       upvotes: s.upvotes ?? 0,
@@ -138,17 +139,11 @@ export default async function QuestionPage({
         {question.file_type === "pdf" ? (
           <PdfViewer fileUrl={question.file_url} />
         ) : (
-          <div className="group relative w-full overflow-hidden rounded-lg border border-gray-200 transition-all duration-normal hover:shadow-md" style={{ minHeight: 400 }}>
-            <Image
-              src={`/api/storage/${question.file_url}`}
-              alt={`Past question ${question.year}`}
-              fill
-              className="object-contain transition-opacity duration-normal group-hover:opacity-95"
-              sizes="(max-width: 768px) 100vw, 800px"
-              priority
-              unoptimized
-            />
-          </div>
+          <EnlargeableImage
+            src={`/api/storage/${question.file_url}`}
+            alt={`Past question ${question.year}`}
+            year={question.year}
+          />
         )}
       </div>
 

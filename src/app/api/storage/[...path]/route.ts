@@ -11,10 +11,13 @@ export async function GET(
   const decoded = normalized.split("/").map(decodeURIComponent).join("/");
 
   if (
-    !decoded.startsWith("approved/") ||
-    decoded.includes("..") ||
-    decoded.includes("~")
+    !decoded.startsWith("approved/") &&
+    !decoded.startsWith("solutions/")
   ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (decoded.includes("..") || decoded.includes("~")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -31,9 +34,10 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const bucket = decoded.startsWith("solutions/") ? "solutions" : "approved";
   const service = createServiceClient();
   const { data, error } = await service.storage
-    .from("approved")
+    .from(bucket)
     .download(decoded);
 
   if (error || !data) {

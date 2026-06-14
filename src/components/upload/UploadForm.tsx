@@ -20,19 +20,27 @@ interface Course {
 
 type UploadState = "idle" | "uploading" | "reviewing" | "rejected";
 
-export function UploadForm({ courses }: { courses: Course[] }) {
+export function UploadForm({ courses: initialCourses }: { courses: Course[] }) {
   const searchParams = useSearchParams();
   const supabase = createClient();
   const preSelectedCourseId = searchParams.get("courseId");
 
+  const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [rejectionReason, setRejectionReason] = useState("");
   const [error, setError] = useState("");
 
+  const [showAddCourse, setShowAddCourse] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newLevel, setNewLevel] = useState("100");
+  const [addingCourse, setAddingCourse] = useState(false);
+
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { isSubmitting },
   } = useForm<UploadData>({
     resolver: zodResolver(uploadSchema) as any,
@@ -43,6 +51,35 @@ export function UploadForm({ courses }: { courses: Course[] }) {
       examType: "examination",
     },
   });
+
+  const handleAddCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCode || !newTitle) return;
+    setAddingCourse(true);
+    try {
+      const res = await fetch("/api/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: newCode, title: newTitle, level: newLevel }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to add course");
+        return;
+      }
+      const created = data.course as Course;
+      setCourses((prev) => [...prev, created]);
+      setValue("courseId", created.id);
+      setShowAddCourse(false);
+      setNewCode("");
+      setNewTitle("");
+      setNewLevel("100");
+    } catch {
+      setError("Failed to add course");
+    } finally {
+      setAddingCourse(false);
+    }
+  };
 
   const onSubmit = useCallback(
     async (data: UploadData) => {
@@ -164,22 +201,96 @@ export function UploadForm({ courses }: { courses: Course[] }) {
       <FileDropzone file={file} onFileSelect={setFile} />
 
       <div>
-        <label htmlFor="courseId" className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700">
           Course
         </label>
-        <select
-          id="courseId"
-          {...register("courseId")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
-        >
-          <option value="">Select course</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.code} — {c.title}
-            </option>
-          ))}
-        </select>
+        <div className="mt-1 flex gap-2">
+          <select
+            id="courseId"
+            {...register("courseId")}
+            className="block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+          >
+            <option value="">Select course</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.code} — {c.title}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setShowAddCourse(true)}
+            className="shrink-0 rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Add
+          </button>
+        </div>
       </div>
+
+      {showAddCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowAddCourse(false)}>
+          <form
+            onSubmit={handleAddCourse}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-xl"
+          >
+            <h4 className="text-sm font-semibold text-gray-900">Add New Course</h4>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">Course Code</label>
+              <input
+                type="text"
+                value={newCode}
+                onChange={(e) => setNewCode(e.target.value)}
+                required
+                placeholder="e.g. CSC101"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">Course Title</label>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                required
+                placeholder="e.g. Introduction to Programming"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700">Level</label>
+              <select
+                value={newLevel}
+                onChange={(e) => setNewLevel(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+              >
+                <option value="100">100 Level</option>
+                <option value="200">200 Level</option>
+                <option value="300">300 Level</option>
+                <option value="400">400 Level</option>
+                <option value="500">500 Level</option>
+                <option value="600">600 Level</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={addingCourse}
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+              >
+                {addingCourse ? "Adding..." : "Add Course"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddCourse(false)}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>

@@ -42,7 +42,7 @@ export const uploadSchema = z.object({
 });
 
 export const solutionSchema = z.object({
-  body: z.string().min(1, "Solution text is required"),
+  body: z.string().min(1, "Solution text is required").optional().or(z.literal("")),
 });
 
 export const sendOtpSchema = z.object({

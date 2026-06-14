@@ -3,6 +3,7 @@ import { SolutionCard } from "./SolutionCard";
 interface Solution {
   id: string;
   body: string | null;
+  file_url: string | null;
   submitted_by: string;
   author_name: string;
   upvotes: number;
@@ -32,6 +33,7 @@ export function SolutionList({ solutions }: SolutionListProps) {
           key={sol.id}
           id={sol.id}
           body={sol.body}
+          fileUrl={sol.file_url}
           authorName={sol.author_name}
           upvotes={sol.upvotes}
           downvotes={sol.downvotes}
