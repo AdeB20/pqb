@@ -391,7 +391,7 @@ export async function POST(req: NextRequest) {
         const { data: linkData } = await service.auth.admin.generateLink({
           type: "recovery",
           email: inviteEmail,
-          options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin}/admin/${req.nextUrl.pathname.split("/")[2]}/login` },
+          options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || process.env.VERCEL_URL || req.nextUrl.origin}/admin/${req.nextUrl.pathname.split("/")[2]}/login` },
         });
 
         const recoveryLink = linkData?.properties?.action_link || null;
