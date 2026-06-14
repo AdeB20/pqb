@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export function AdminLoginForm({ secret }: { secret: string }) {
@@ -9,6 +9,60 @@ export function AdminLoginForm({ secret }: { secret: string }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [processingToken, setProcessingToken] = useState(true);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || !hash.includes("access_token")) {
+      setProcessingToken(false);
+      return;
+    }
+
+    const params = new URLSearchParams(hash.replace("#", ""));
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const type = params.get("type");
+
+    if (!accessToken || !refreshToken) {
+      setProcessingToken(false);
+      return;
+    }
+
+    (async () => {
+      const { error: sessionErr } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (sessionErr) {
+        setError(sessionErr.message);
+        setProcessingToken(false);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError("Could not verify identity");
+        setProcessingToken(false);
+        return;
+      }
+
+      const { data: rawProfile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("auth_user_id", user.id)
+        .single();
+      const profile = rawProfile as unknown as { role: string } | null;
+
+      if (profile?.role !== "super_admin") {
+        await supabase.auth.signOut();
+        setError("Not authorized as admin");
+        setProcessingToken(false);
+        return;
+      }
+
+      window.location.href = `/admin/${secret}/dashboard`;
+    })();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,13 +131,17 @@ export function AdminLoginForm({ secret }: { secret: string }) {
         />
       </div>
       {error && <p className="text-sm text-danger-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
-      >
-        {loading ? "Signing in..." : "Sign in"}
-      </button>
+      {processingToken ? (
+        <p className="text-center text-sm text-gray-500">Processing recovery link...</p>
+      ) : (
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      )}
     </form>
   );
 }

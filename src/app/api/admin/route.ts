@@ -376,7 +376,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: createErr?.message || "Failed to create account" }, { status: 500 });
         }
 
-        const { data: deptRow } = await service.from("departments").select("id").limit(1).single();
+        const { data: deptRow } = await service.from("departments").select("id").limit(1).maybeSingle();
         const deptId = deptRow ? (deptRow as unknown as { id: string }).id : null;
 
         await service.from("profiles").insert({
