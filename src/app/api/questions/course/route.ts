@@ -42,45 +42,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("department_id")
-    .eq("auth_user_id", user.id)
-    .single();
-  const profile = rawProfile as unknown as { department_id: string } | null;
-  if (!profile) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  const { data: rawCourse } = await supabase
-    .from("courses")
-    .select("scope, department_id")
-    .eq("id", courseId)
-    .single();
-  const course = rawCourse as unknown as {
-    scope: string;
-    department_id: string;
-  } | null;
-
-  if (!course) {
-    return NextResponse.json({ error: "Course not found" }, { status: 404 });
-  }
-
-  const isGeneral = course.scope === "general";
-  const isOwnDept = course.department_id === profile.department_id;
-  const isLinked = !isGeneral && !isOwnDept
-    ? !!(await supabase
-        .from("department_courses")
-        .select("course_id")
-        .eq("course_id", courseId)
-        .eq("department_id", profile.department_id)
-        .maybeSingle()).data
-    : false;
-
-  if (!isGeneral && !isOwnDept && !isLinked) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   let query = supabase
     .from("past_questions")
     .select("id, year, semester, exam_type, file_type, level, status, flag_count, created_at", { count: "exact" })
