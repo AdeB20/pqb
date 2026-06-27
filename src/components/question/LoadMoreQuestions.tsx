@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QuestionList } from "./QuestionList";
-import { useSearchParams } from "next/navigation";
 
 interface Question {
   id: string;
@@ -19,27 +18,26 @@ interface Question {
 interface LoadMoreQuestionsProps {
   initialQuestions: Question[];
   courseId: string;
+  year?: string;
+  semester?: string;
 }
 
 export function LoadMoreQuestions({
   initialQuestions,
   courseId,
+  year,
+  semester,
 }: LoadMoreQuestionsProps) {
-  const searchParams = useSearchParams();
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   const [offset, setOffset] = useState(initialQuestions.length);
   const [hasMore, setHasMore] = useState(initialQuestions.length >= 20);
   const [loading, setLoading] = useState(false);
-  const filtersKey = `${searchParams.get("year") ?? ""}-${searchParams.get("semester") ?? ""}`;
-  const filtersKeyRef = useRef(filtersKey);
   const offsetRef = useRef(offset);
   offsetRef.current = offset;
 
   const fetchQuestions = useCallback(
     async (startOffset: number, replace: boolean) => {
       setLoading(true);
-      const year = searchParams.get("year");
-      const semester = searchParams.get("semester");
       const params = new URLSearchParams({
         courseId,
         offset: String(startOffset),
@@ -63,15 +61,14 @@ export function LoadMoreQuestions({
       }
       setLoading(false);
     },
-    [courseId, searchParams],
+    [courseId, year, semester],
   );
 
   useEffect(() => {
-    if (filtersKeyRef.current !== filtersKey) {
-      filtersKeyRef.current = filtersKey;
-      fetchQuestions(0, true);
-    }
-  }, [filtersKey, fetchQuestions]);
+    setQuestions(initialQuestions);
+    setOffset(initialQuestions.length);
+    setHasMore(initialQuestions.length >= 20);
+  }, [initialQuestions, courseId, year, semester]);
 
   const loadMore = useCallback(() => {
     fetchQuestions(offsetRef.current, false);

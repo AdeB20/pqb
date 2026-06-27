@@ -34,12 +34,30 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
+function cleanupRateLimitStore(now = Date.now()) {
+  let activeCount = 0;
+  rateLimitStore.forEach((entry, key) => {
+    if (now > entry.reset) {
+      rateLimitStore.delete(key);
+    } else {
+      activeCount++;
+    }
+  });
+
+  if (activeCount > 100) {
+    console.log(
+      `[UniPastQ] ${JSON.stringify({ t: new Date(now).toISOString(), lvl: "warn", ev: "ratelimit.high_utilization", msg: "Rate limit store has high number of active entries", count: activeCount })}`,
+    );
+  }
+}
+
 export function checkRateLimit(
   key: string,
   maxAttempts: number,
   windowMs: number,
 ): boolean {
   const now = Date.now();
+  cleanupRateLimitStore(now);
   const entry = rateLimitStore.get(key);
   if (!entry || now > entry.reset) {
     rateLimitStore.set(key, { count: 1, reset: now + windowMs });
@@ -53,37 +71,16 @@ export function checkRateLimit(
 }
 
 export function getRateLimitCount(key: string): number {
+  cleanupRateLimitStore();
   const entry = rateLimitStore.get(key);
   if (!entry || Date.now() > entry.reset) return 0;
   return entry.count;
 }
 
 export function getActiveRateLimitKeys(): number {
-  const now = Date.now();
-  let count = 0;
-  rateLimitStore.forEach((entry) => {
-    if (now <= entry.reset) count++;
-  });
-  return count;
+  cleanupRateLimitStore();
+  return rateLimitStore.size;
 }
-
-const CLEANUP_INTERVAL = 5 * 60 * 1000;
-setInterval(() => {
-  const now = Date.now();
-  let activeCount = 0;
-  rateLimitStore.forEach((entry, key) => {
-    if (now > entry.reset) {
-      rateLimitStore.delete(key);
-    } else {
-      activeCount++;
-    }
-  });
-  if (activeCount > 100) {
-    console.log(
-      `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "ratelimit.high_utilization", msg: "Rate limit store has high number of active entries", count: activeCount })}`,
-    );
-  }
-}, CLEANUP_INTERVAL);
 
 const ALLOWED_MIME_TYPES = ["application/pdf", "image/jpeg", "image/png"] as const;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -134,7 +131,8 @@ export async function checkDbRateLimit(
       const row = existing as unknown as { count: number; expires_at: string };
       if (new Date(row.expires_at).getTime() > Date.now()) {
         if (row.count >= maxAttempts) return false;
-        await service.from("rate_limits" as never)
+        await service
+          .from("rate_limits" as never)
           .update({ count: row.count + 1 } as never)
           .eq("key", key);
         return true;

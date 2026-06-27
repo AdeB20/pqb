@@ -3,6 +3,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { CourseGrid } from "@/components/browse/CourseGrid";
 import { LevelTabs } from "@/components/browse/LevelTabs";
+import {
+  loadPublishedQuestionCounts,
+  loadStudentCourseGroups,
+  loadStudentProfile,
+} from "@/lib/student-data";
 
 export default async function DashboardPage({
   searchParams,
@@ -15,78 +20,26 @@ export default async function DashboardPage({
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
-
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("*, department:department_id(id, name, available_levels)")
-    .eq("auth_user_id", user.id)
-    .single();
-  const profile = rawProfile as unknown as {
-    id: string;
-    department_id: string;
-    current_level: number;
-    department: { id: string; name: string; available_levels: number[] };
-  } | null;
-
+  const profile = await loadStudentProfile(supabase, user.id);
   if (!profile) redirect("/login");
 
-  const prog = profile.department;
-
-  const { data: rawCourses } = await supabase
-    .from("courses")
-    .select("id, code, title, level, scope")
-    .or(`scope.eq.general,department_id.eq.${profile.department_id}`)
-    .order("level");
-  const ownCourses = rawCourses as unknown as Array<{
-    id: string;
-    code: string;
-    title: string;
-    level: number;
-    scope: "departmental" | "shared" | "general";
-  }> | null;
-
-  const { data: rawDeptLinks } = await supabase
-    .from("department_courses")
-    .select("course_id, course:course_id(id, code, title, level, scope)")
-    .eq("department_id", profile.department_id);
-  const deptLinks = rawDeptLinks as unknown as Array<{
-    course_id: string;
-    course: {
-      id: string;
-      code: string;
-      title: string;
-      level: number;
-      scope: "departmental" | "shared" | "general";
-    };
-  }> | null;
-
-  const linkedIds = new Set(deptLinks?.map((l) => l.course_id) || []);
-  const courses = [
-    ...(ownCourses || []).filter((c) => !linkedIds.has(c.id)),
-    ...(deptLinks || []).map((l) => l.course),
-  ].sort((a, b) => a.level - b.level);
-
-  const courseIds = courses.map((c) => c.id);
-  const { data: questionData } = courseIds.length > 0
-    ? await supabase
-        .from("past_questions")
-        .select("course_id")
-        .in("course_id", courseIds)
-        .eq("status", "published")
-    : { data: [] };
-  const questionCounts: Record<string, number> = {};
-  for (const q of (questionData || []) as { course_id: string }[]) {
-    questionCounts[q.course_id] = (questionCounts[q.course_id] || 0) + 1;
-  }
+  const courseGroups = await loadStudentCourseGroups(
+    supabase,
+    profile.department_id,
+  );
+  const questionCounts = await loadPublishedQuestionCounts(
+    supabase,
+    courseGroups.allCourses.map((c) => c.id),
+  );
 
   const withCount = <T extends { id: string }>(c: T) => ({
     ...c,
     questionCount: questionCounts[c.id] || 0,
   });
 
-  const generalCourses = courses?.filter((c) => c.scope === "general").map(withCount) || [];
-  const programmeCourses = courses?.filter((c) => c.scope !== "general").map(withCount) || [];
-  const levels = prog?.available_levels || [];
+  const generalCourses = courseGroups.generalCourses.map(withCount) || [];
+  const programmeCourses = courseGroups.programmeCourses.map(withCount) || [];
+  const levels = profile.department?.available_levels || [];
 
   const selectedLevel = searchParams.level
     ? parseInt(searchParams.level)
@@ -99,7 +52,7 @@ export default async function DashboardPage({
       <div className="animate-fade-in-down flex flex-col gap-4 rounded-[1.75rem] border border-white/70 bg-white/70 p-5 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-primary">Dashboard</h2>
-          <p className="mt-1 text-sm text-gray-500">{prog?.name}</p>
+          <p className="mt-1 text-sm text-gray-500">{profile.department?.name}</p>
         </div>
         <Link
           href="/upload"

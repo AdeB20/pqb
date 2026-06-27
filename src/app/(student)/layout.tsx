@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { StudentLayoutClient } from "./StudentLayoutClient";
+import {
+  loadStudentCourseGroups,
+  loadStudentProfile,
+  loadUploadObligationDays,
+} from "@/lib/student-data";
+import { daysRemaining as calculateDaysRemaining } from "@/lib/utils";
 
 export default async function StudentLayout({
   children,
@@ -13,94 +19,22 @@ export default async function StudentLayout({
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+  const profile = await loadStudentProfile(supabase, user.id);
+  if (!profile) redirect("/login");
 
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("*, department:department_id(id, name, available_levels)")
-    .eq("auth_user_id", user.id)
-    .single();
-
-  if (!rawProfile) redirect("/login");
-
-  const profile = rawProfile as unknown as {
-    id: string;
-    auth_user_id: string;
-    full_name: string;
-    matric_number: string;
-    department_id: string;
-    current_level: number;
-    role: string;
-    last_upload_at: string | null;
-    is_locked: boolean;
-    created_at: string;
-    department: { id: string; name: string; available_levels: number[] };
-  };
+  const [courseGroups, obligationDays] = await Promise.all([
+    loadStudentCourseGroups(supabase, profile.department_id),
+    loadUploadObligationDays(supabase),
+  ]);
 
   const prog = profile.department;
-
-  const { data: rawOwnCourses } = await supabase
-    .from("courses")
-    .select("id, code, title, level, scope, department_id")
-    .or(`scope.eq.general,department_id.eq.${profile.department_id}`)
-    .order("level");
-  const ownCourses = rawOwnCourses as unknown as Array<{
-    id: string;
-    code: string;
-    title: string;
-    level: number;
-    scope: "departmental" | "shared" | "general";
-    department_id: string;
-  }> | null;
-
-  const { data: rawDeptLinks } = await supabase
-    .from("department_courses")
-    .select("course_id, course:course_id(id, code, title, level, scope, department_id)")
-    .eq("department_id", profile.department_id);
-  const deptLinks = rawDeptLinks as unknown as Array<{
-    course_id: string;
-    course: {
-      id: string;
-      code: string;
-      title: string;
-      level: number;
-      scope: "departmental" | "shared" | "general";
-      department_id: string;
-    };
-  }> | null;
-
-  const linkedIds = new Set(deptLinks?.map((l) => l.course_id) || []);
-  const allCourses = [
-    ...((ownCourses || []).filter((c) => !linkedIds.has(c.id))),
-    ...(deptLinks || []).map((l) => l.course),
-  ].sort((a, b) => a.level - b.level);
-
-  const generalCourses =
-    allCourses.filter((c) => c.scope === "general") || [];
-  const programmeCourses =
-    allCourses.filter((c) => c.scope !== "general") || [];
-
-  const { data: rawSettings } = await supabase
-    .from("platform_settings")
-    .select("upload_obligation_days")
-    .single();
-  const settings = rawSettings as unknown as {
-    upload_obligation_days: number;
-  } | null;
-
-  const daysRemaining = profile.last_upload_at
-    ? Math.max(
-        0,
-        Math.ceil(
-          (new Date(profile.last_upload_at).getTime() +
-            (settings?.upload_obligation_days || 90) * 86400000 -
-            Date.now()) /
-            86400000,
-        ),
-      )
-    : 0;
+  const daysRemaining = calculateDaysRemaining(
+    profile.last_upload_at,
+    obligationDays,
+  );
 
   return (
-    <StudentLayoutClient
+      <StudentLayoutClient
       profile={{
         id: profile.id,
         fullName: profile.full_name,
@@ -111,8 +45,8 @@ export default async function StudentLayout({
       }}
       programmeName={prog?.name || ""}
       availableLevels={prog?.available_levels || []}
-      generalCourses={generalCourses}
-      programmeCourses={programmeCourses}
+      generalCourses={courseGroups.generalCourses}
+      programmeCourses={courseGroups.programmeCourses}
     >
       {children}
     </StudentLayoutClient>

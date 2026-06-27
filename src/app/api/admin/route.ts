@@ -170,7 +170,13 @@ export async function GET(req: NextRequest) {
           file_url: q.file_url ? `${supabaseUrl}/storage/v1/object/public/approved/${q.file_url}` : null,
         }));
 
-        const deptIds = [...new Set((questionsWithUrls as Array<{ courses?: { department_id: string } }>).map((q) => q.courses?.department_id).filter(Boolean))] as string[];
+        const deptIds = Array.from(
+          new Set(
+            (questionsWithUrls as Array<{ courses?: { department_id: string } }>)
+              .map((q) => q.courses?.department_id)
+              .filter(Boolean),
+          ),
+        ) as string[];
         const { data: deptRows } = await service
           .from("departments")
           .select("id, name")

@@ -1,15 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { sanitizeHtml } from "@/lib/utils";
-import { solutionSchema } from "@/lib/validations";
-
-type FormData = z.infer<typeof solutionSchema>;
 
 interface SolutionFormProps {
   questionId: string;
@@ -22,29 +16,38 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
   const router = useRouter();
   const supabase = createClient();
   const [open, setOpen] = useState(false);
+  const [body, setBody] = useState("");
   const [error, setError] = useState("");
   const [solutionFile, setSolutionFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(solutionSchema),
-  });
-
-  const onSubmit = async (data: FormData) => {
+  const resetForm = () => {
+    setBody("");
+    setSolutionFile(null);
     setError("");
-    if (!data.body && !solutionFile) {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+
+    const trimmedBody = body.trim();
+    if (!trimmedBody && !solutionFile) {
       setError("Add text or a file");
       return;
     }
+
+    setIsSubmitting(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setIsSubmitting(false);
+      return;
+    }
 
     const { data: rawProfile } = await supabase
       .from("profiles")
@@ -52,7 +55,10 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
       .eq("auth_user_id", user.id)
       .single();
     const profile = rawProfile as unknown as { id: string } | null;
-    if (!profile) return;
+    if (!profile) {
+      setIsSubmitting(false);
+      return;
+    }
 
     let fileUrl: string | null = null;
     if (solutionFile) {
@@ -64,6 +70,7 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
         .upload(filePath, solutionFile);
       if (uploadErr) {
         setError("File upload failed");
+        setIsSubmitting(false);
         return;
       }
       fileUrl = `solutions/${filePath}`;
@@ -72,20 +79,21 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
     const { error: insertError } = await supabase.from("solutions").insert({
       question_id: questionId,
       submitted_by: profile.id,
-      body: data.body ? sanitizeHtml(data.body) : null,
+      body: trimmedBody ? sanitizeHtml(trimmedBody) : null,
       file_url: fileUrl,
       status: "published",
     } as never);
 
     if (insertError) {
       setError("Failed to submit solution.");
+      setIsSubmitting(false);
       return;
     }
 
-    reset();
-    setSolutionFile(null);
+    resetForm();
     setOpen(false);
     router.refresh();
+    setIsSubmitting(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,9 +124,10 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
+    <form onSubmit={onSubmit} className="space-y-3 rounded-lg border border-gray-200 bg-white p-4">
       <textarea
-        {...register("body")}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
         rows={4}
         placeholder="Write your solution (or attach a file below)..."
         className="block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
@@ -139,7 +148,10 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
             <span className="truncate text-sm text-gray-700">{solutionFile.name}</span>
             <button
               type="button"
-              onClick={() => { setSolutionFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+              onClick={() => {
+                setSolutionFile(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
               className="ml-auto text-xs font-medium text-danger-600 hover:text-danger-800"
             >
               Remove
@@ -169,7 +181,10 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
         </button>
         <button
           type="button"
-          onClick={() => { setOpen(false); setSolutionFile(null); }}
+          onClick={() => {
+            setOpen(false);
+            resetForm();
+          }}
           className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           Cancel

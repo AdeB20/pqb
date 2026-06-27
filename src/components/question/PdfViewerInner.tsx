@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface PdfViewerInnerProps {
   fileUrl: string;
@@ -23,11 +23,7 @@ export function PdfViewerInner({ fileUrl }: PdfViewerInnerProps) {
       <div className="flex h-48 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
         <p className="text-sm text-gray-500">
           PDF could not be rendered.{" "}
-          <a
-            href={fileUrl}
-            download
-            className="font-medium text-primary-600 hover:text-primary-800"
-          >
+          <a href={fileUrl} download className="font-medium text-primary-600 hover:text-primary-800">
             Download instead
           </a>
         </p>
@@ -52,7 +48,7 @@ export function PdfViewerInner({ fileUrl }: PdfViewerInnerProps) {
             onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
             className="text-sm text-gray-700 disabled:opacity-50"
           >
-            ← Prev
+            Prev
           </button>
           <span className="text-sm text-gray-500">
             {pageNumber} / {numPages}
@@ -63,7 +59,7 @@ export function PdfViewerInner({ fileUrl }: PdfViewerInnerProps) {
             onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
             className="text-sm text-gray-700 disabled:opacity-50"
           >
-            Next →
+            Next
           </button>
         </div>
       )}

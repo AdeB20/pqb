@@ -1,12 +1,71 @@
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { PdfViewer } from "@/components/question/PdfViewer";
-import { FlagModal } from "@/components/question/FlagModal";
-import { EnlargeableImage } from "@/components/question/EnlargeableImage";
-import { SolutionForm } from "@/components/solutions/SolutionForm";
-import { SolutionList } from "@/components/solutions/SolutionList";
 import { Badge } from "@/components/ui/badge";
+
+const PdfViewer = dynamic(
+  () => import("@/components/question/PdfViewer").then((mod) => mod.PdfViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+        <p className="text-sm text-gray-500">Loading PDF viewer...</p>
+      </div>
+    ),
+  },
+);
+
+const FlagModal = dynamic(
+  () => import("@/components/question/FlagModal").then((mod) => mod.FlagModal),
+  {
+    ssr: false,
+    loading: () => (
+      <button
+        type="button"
+        className="rounded-2xl px-3 py-1.5 text-xs font-medium text-gray-500 opacity-60"
+      >
+        Flag
+      </button>
+    ),
+  },
+);
+
+const EnlargeableImage = dynamic(
+  () =>
+    import("@/components/question/EnlargeableImage").then((mod) => mod.EnlargeableImage),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+        <p className="text-sm text-gray-500">Loading image viewer...</p>
+      </div>
+    ),
+  },
+);
+
+const SolutionList = dynamic(
+  () => import("@/components/solutions/SolutionList").then((mod) => mod.SolutionList),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-3">
+        <div className="h-24 animate-pulse rounded-lg bg-gray-100" />
+        <div className="h-24 animate-pulse rounded-lg bg-gray-100" />
+      </div>
+    ),
+  },
+);
+
+const SolutionForm = dynamic(
+  () => import("@/components/solutions/SolutionForm").then((mod) => mod.SolutionForm),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-11 w-36 animate-pulse rounded-md bg-gray-100" />
+    ),
+  },
+);
 
 export default async function QuestionPage({
   params,
@@ -41,21 +100,23 @@ export default async function QuestionPage({
     redirect("/dashboard");
   }
 
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("auth_user_id", user.id)
-    .single();
-  const currentProfile = rawProfile as unknown as { id: string } | null;
+  const [rawProfile, rawSolutions] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single(),
+    supabase
+      .from("solutions")
+      .select("*, submitted_by_profile:submitted_by(full_name)")
+      .eq("question_id", params.id)
+      .eq("status", "published")
+      .order("created_at", { ascending: false }),
+  ]);
+  const currentProfile = rawProfile.data as unknown as { id: string } | null;
   const currentProfileId = currentProfile?.id;
 
-  const { data: rawSolutions } = await supabase
-    .from("solutions")
-    .select("*, submitted_by_profile:submitted_by(full_name)")
-    .eq("question_id", params.id)
-    .eq("status", "published")
-    .order("created_at", { ascending: false });
-  const dbSolutions = rawSolutions as unknown as Array<{
+  const dbSolutions = rawSolutions.data as unknown as Array<{
     id: string;
     body: string | null;
     submitted_by: string;
@@ -115,13 +176,11 @@ export default async function QuestionPage({
       <div className="animate-fade-in-up stagger-1 flex items-start justify-between">
         <div>
           <h2 className="text-xl font-semibold text-primary">
-            {question.year} —{" "}
-            {question.semester === "first" ? "First" : "Second"} Semester
+            {question.year} — {question.semester === "first" ? "First" : "Second"} Semester
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             <span className="font-mono">{course.code}</span> · Level{" "}
-            {question.level} ·{" "}
-            {question.exam_type === "mid_semester" ? "Mid Semester" : "Examination"} ·{" "}
+            {question.level} · {question.exam_type === "mid_semester" ? "Mid Semester" : "Examination"} ·{" "}
             <Badge
               variant="outline"
               className="border-secondary/25 bg-secondary/10 text-xs text-secondary"
@@ -147,7 +206,7 @@ export default async function QuestionPage({
         )}
       </div>
 
-      <hr className="border-white/70 animate-fade-in" />
+      <hr className="animate-fade-in border-white/70" />
 
       <div className="animate-fade-in-up stagger-3">
         <h3 className="text-lg font-medium text-primary">

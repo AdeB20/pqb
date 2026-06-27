@@ -89,8 +89,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        sans: ["var(--font-geist-sans)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "JetBrains Mono", "Fira Code", "monospace"],
       },
       fontSize: {
         xs: ["12px", "1.5"],

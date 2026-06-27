@@ -1,13 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState, useMemo } from "react";
-import { BulkImportModal } from "./BulkImportModal";
 
 type Tab = "faculties" | "programmes" | "courses";
 
 type Faculty = { id: string; name: string; slug: string };
 type Programme = { name: string; faculty_name: string };
 type Course = { code: string; title: string; level: number };
+
+const BulkImportModal = dynamic(
+  () => import("./BulkImportModal").then((mod) => mod.BulkImportModal),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50" />
+        <div className="relative z-10 rounded-xl bg-white px-5 py-4 shadow-xl">
+          <p className="text-sm text-gray-500">Loading import tools...</p>
+        </div>
+      </div>
+    ),
+  },
+);
 
 export function DataOverview() {
   const [faculties, setFaculties] = useState<Faculty[]>([]);

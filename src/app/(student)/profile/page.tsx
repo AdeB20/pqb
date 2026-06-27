@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import {
+  loadStudentProfile,
+  loadUploadObligationDays,
+} from "@/lib/student-data";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -9,51 +13,31 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("*, department:department_id(name)")
-    .eq("auth_user_id", user.id)
-    .single();
-  const profile = rawProfile as unknown as {
-    id: string;
-    full_name: string;
-    matric_number: string;
-    department_id: string;
-    current_level: number;
-    last_upload_at: string | null;
-    is_locked: boolean;
-    department: { name: string } | null;
-  } | null;
-
+  const profile = await loadStudentProfile(supabase, user.id);
   if (!profile) redirect("/login");
 
-  const { data: rawSettings } = await supabase
-    .from("platform_settings")
-    .select("upload_obligation_days")
-    .single();
-  const settings = rawSettings as unknown as {
-    upload_obligation_days: number;
-  } | null;
+  const [obligationDays, rawUploads] = await Promise.all([
+    loadUploadObligationDays(supabase),
+    supabase
+      .from("past_questions")
+      .select("id, year, semester, status, created_at, course:course_id(code)")
+      .eq("uploaded_by", profile.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  const prog = profile.department;
   const daysRemaining = profile.last_upload_at
     ? Math.max(
         0,
         Math.ceil(
           (new Date(profile.last_upload_at).getTime() +
-            (settings?.upload_obligation_days || 90) * 86400000 -
+            obligationDays * 86400000 -
             Date.now()) /
             86400000,
         ),
       )
     : 0;
 
-  const { data: rawUploads } = await supabase
-    .from("past_questions")
-    .select("id, year, semester, status, created_at, course:course_id(code)")
-    .eq("uploaded_by", profile.id)
-    .order("created_at", { ascending: false });
-  const uploads = rawUploads as unknown as Array<{
+  const uploads = rawUploads.data as unknown as Array<{
     id: string;
     year: number;
     semester: string;
@@ -84,7 +68,7 @@ export default async function ProfilePage() {
           </div>
           <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Programme</dt>
-            <dd className="mt-1 text-sm text-gray-900">{prog?.name || "—"}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{profile.department?.name || "—"}</dd>
           </div>
           <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Current level</dt>

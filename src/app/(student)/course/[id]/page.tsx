@@ -97,6 +97,8 @@ export default async function CoursePage({
         <LoadMoreQuestions
           initialQuestions={questions || []}
           courseId={params.id}
+          year={searchParams.year}
+          semester={searchParams.semester}
         />
       </div>
 
