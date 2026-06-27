@@ -141,12 +141,16 @@ export function AdminLoginForm({ secret }: { secret: string }) {
     setLoading(true);
 
     const redirectTo = `${window.location.origin}/admin/${secret}/login`;
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo,
+
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: resetEmail, redirectTo }),
     });
 
-    if (resetErr) {
-      setError(resetErr.message);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Failed to send reset email");
       setLoading(false);
       return;
     }
@@ -202,54 +206,6 @@ export function AdminLoginForm({ secret }: { secret: string }) {
       </form>
     );
   }
-
-  return (
-    <form onSubmit={handleLogin} className="space-y-4">
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
-        />
-      </div>
-      {error && <p className="text-sm text-danger-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
-      >
-        {loading ? "Signing in..." : "Sign in"}
-      </button>
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={() => { setMode("forgot-password"); setResetEmail(email); setError(""); }}
-          className="text-sm text-gray-500 hover:text-primary-600 transition-colors"
-        >
-          Forgot password?
-        </button>
-      </div>
-    </form>
-  );
 
   if (mode === "forgot-password" || mode === "reset-sent") {
     return (
@@ -308,5 +264,51 @@ export function AdminLoginForm({ secret }: { secret: string }) {
     );
   }
 
-  return null;
+  return (
+    <form onSubmit={handleLogin} className="space-y-4">
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+        />
+      </div>
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+        />
+      </div>
+      {error && <p className="text-sm text-danger-600">{error}</p>}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+      >
+        {loading ? "Signing in..." : "Sign in"}
+      </button>
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={() => { setMode("forgot-password"); setResetEmail(email); setError(""); }}
+          className="text-sm text-gray-500 hover:text-primary-600 transition-colors"
+        >
+          Forgot password?
+        </button>
+      </div>
+    </form>
+  );
 }
