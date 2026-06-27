@@ -90,8 +90,8 @@ export default async function BrowsePage({
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in-down">
-        <h2 className="text-xl font-semibold text-gray-900">Browse Courses</h2>
+      <div className="animate-fade-in-down rounded-[1.75rem] border border-white/70 bg-white/70 p-5 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl">
+        <h2 className="text-xl font-semibold text-primary">Browse Courses</h2>
         {search && (
           <p className="mt-1 text-sm text-gray-500">
             Results for &quot;{search}&quot;
@@ -106,7 +106,7 @@ export default async function BrowsePage({
             emptyMessage={search ? `No courses matching "${search}"` : "No courses available."}
           />
         ) : (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
+          <div className="clay-surface p-8 text-center">
             <p className="text-gray-500">
               {search
                 ? `No courses matching "${search}"`

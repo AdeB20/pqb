@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SearchBar } from "@/components/browse/SearchBar";
+import { PanelLeftClose, PanelLeft } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,10 +17,12 @@ import {
 
 interface HeaderProps {
   onMenuClick?: () => void;
+  onSidebarToggle?: () => void;
+  sidebarCollapsed?: boolean;
   userName?: string;
 }
 
-export function Header({ onMenuClick, userName }: HeaderProps) {
+export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed, userName }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -32,16 +35,31 @@ export function Header({ onMenuClick, userName }: HeaderProps) {
   const initial = userName?.charAt(0)?.toUpperCase() || "U";
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b border-border bg-background px-4 lg:h-16 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-white/10 bg-primary px-3 text-primary-foreground shadow-[0_18px_45px_rgba(122,16,48,0.22)] backdrop-blur-xl lg:h-16 lg:gap-4 lg:px-4">
+      {onSidebarToggle && (
+        <button
+          type="button"
+          onClick={onSidebarToggle}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary/30 lg:inline-flex"
+        >
+          {sidebarCollapsed ? (
+            <PanelLeft className="h-5 w-5" />
+          ) : (
+            <PanelLeftClose className="h-5 w-5" />
+          )}
+        </button>
+      )}
+
       {onMenuClick && (
         <button
           type="button"
           onClick={onMenuClick}
           aria-label="Open menu"
-          className="lg:hidden"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary/30 lg:hidden"
         >
           <svg
-            className="h-5 w-5 text-foreground"
+            className="h-5 w-5 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -56,8 +74,11 @@ export function Header({ onMenuClick, userName }: HeaderProps) {
         </button>
       )}
 
-      <Link href="/dashboard" className="text-sm font-bold text-foreground lg:text-base">
-        UniPastQ
+      <Link href="/dashboard" className="flex items-center gap-2 text-sm font-bold text-primary-foreground lg:text-base">
+        <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/15 text-xs font-semibold tracking-wide text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+          U
+        </span>
+        <span>UniPastQ</span>
       </Link>
 
       <div className="hidden flex-1 lg:block">
@@ -66,14 +87,14 @@ export function Header({ onMenuClick, userName }: HeaderProps) {
 
       <div className="ml-auto flex items-center gap-2">
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <DropdownMenuTrigger className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/15 text-sm font-medium text-white outline-none transition-transform hover:-translate-y-0.5 hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-secondary/30">
             {initial}
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuGroup>
               <DropdownMenuLabel>
                 <div className="flex items-center gap-2">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground shadow-[0_10px_20px_rgba(122,16,48,0.2)]">
                     {initial}
                   </span>
                   <span className="truncate text-sm font-medium text-foreground">

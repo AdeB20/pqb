@@ -2,25 +2,12 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { validateFile } from "@/lib/utils";
+import { validateFile, checkDbRateLimit } from "@/lib/utils";
 import { moderateSchema } from "@/lib/validations";
 import { logger } from "@/lib/logger";
 
-const rateLimitMap = new Map<string, { count: number; reset: number }>();
 const RATE_LIMIT = 3;
 const RATE_WINDOW_MS = 60_000;
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-  if (!entry || now > entry.reset) {
-    rateLimitMap.set(userId, { count: 1, reset: now + RATE_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
 
 export async function POST(req: Request) {
   const start = Date.now();
@@ -36,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!checkRateLimit(user.id)) {
+    if (!(await checkDbRateLimit(`moderate:${user.id}`, RATE_LIMIT, RATE_WINDOW_MS))) {
       logger.warn({ event: "moderate.rate_limited", message: "Moderate rate limit hit", userId: user.id });
       return NextResponse.json(
         { error: "Too many requests. Please wait before uploading again." },

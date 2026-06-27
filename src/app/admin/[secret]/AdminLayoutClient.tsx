@@ -32,16 +32,16 @@ export function AdminLayoutClient({
   }, []);
 
   if (isAuthed === null) {
-    return <div className="flex min-h-screen items-center justify-center bg-gray-50">{children}</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-background">{children}</div>;
   }
 
   if (!isAuthed) {
-    return <div className="flex min-h-screen items-center justify-center bg-gray-50">{children}</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-background">{children}</div>;
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <aside className="hidden w-64 shrink-0 border-r border-gray-200 bg-white md:block">
+    <div className="flex min-h-screen bg-background">
+      <aside className="hidden w-64 shrink-0 border-r border-white/70 bg-white/65 shadow-[12px_0_30px_rgba(63,39,50,0.06)] backdrop-blur-xl md:block">
         <AdminSidebar secret={secret} />
       </aside>
 
@@ -52,11 +52,11 @@ export function AdminLayoutClient({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-gray-200 bg-white">
+        <header className="sticky top-0 z-30 border-b border-white/70 bg-white/80 shadow-[0_16px_35px_rgba(63,39,50,0.08)] backdrop-blur-xl">
           <div className="flex items-center justify-between px-4 py-3 md:px-6">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 md:hidden"
+              className="rounded-2xl p-2 text-gray-500 hover:bg-secondary/10 hover:text-secondary md:hidden"
               aria-label="Open sidebar"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -69,7 +69,7 @@ export function AdminLayoutClient({
             <form action="/auth/signout" method="post" className="md:hidden">
               <button
                 type="submit"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+                className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-secondary/10 hover:text-secondary"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />

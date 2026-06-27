@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { checkRateLimit, hashOtp } from "@/lib/utils";
+import { checkDbRateLimit, hashOtp } from "@/lib/utils";
 import { sendOtpSchema } from "@/lib/validations";
 import { logger } from "@/lib/logger";
 
@@ -28,8 +28,14 @@ export async function POST(req: Request) {
 
     const { email, fullName, matricNumber, departmentId, currentLevel } = parsed.data;
 
+    const allowedDomain = process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN;
+    if (allowedDomain && !email.toLowerCase().endsWith(allowedDomain)) {
+      logger.warn({ event: "otp.send.invalid_domain", message: "Email domain not allowed", ip, email });
+      return NextResponse.json({ error: `Only ${allowedDomain} emails are accepted` }, { status: 400 });
+    }
+
     const rateKey = `send-otp:${ip}:${email.toLowerCase()}`;
-    if (!checkRateLimit(rateKey, 3, 60_000)) {
+    if (!(await checkDbRateLimit(rateKey, 3, 60_000))) {
       logger.warn({ event: "otp.send.rate_limited", message: "OTP rate limit hit", ip, email });
       return NextResponse.json(
         { error: "Too many OTP requests. Please wait before trying again." },

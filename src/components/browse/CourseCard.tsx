@@ -27,19 +27,19 @@ export function CourseCard({
     <Link
       href={`/course/${id}`}
       className={cn(
-        "group block rounded-lg border border-gray-200 bg-white p-6 shadow-soft transition-all duration-normal hover:-translate-y-0.5 hover:shadow-md hover:border-gray-300",
+        "group block rounded-3xl border border-white/70 bg-white/75 p-6 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl transition-all duration-normal hover:-translate-y-1 hover:border-secondary/30 hover:shadow-[0_24px_55px_rgba(63,39,50,0.14)]",
         className,
       )}
     >
       <div className="flex items-start justify-between">
-        <p className="font-mono text-sm font-medium text-gray-900 transition-colors duration-normal group-hover:text-primary-600">{code}</p>
+        <p className="font-mono text-sm font-medium text-gray-900 transition-colors duration-normal group-hover:text-secondary">{code}</p>
         {scope === "general" && (
-          <Badge variant="default" className="bg-info-50 text-info-600 border-info-200">
+          <Badge variant="default" className="bg-primary text-primary-foreground">
             General
           </Badge>
         )}
         {scope === "shared" && (
-          <Badge variant="secondary" className="bg-primary-50 text-primary-600 border-primary-200">
+          <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
             Shared
           </Badge>
         )}

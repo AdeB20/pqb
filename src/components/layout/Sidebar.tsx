@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Course {
   id: string;
@@ -20,7 +21,6 @@ interface SidebarProps {
   availableLevels: number[];
   currentLevel: number;
   collapsed?: boolean;
-  onToggleCollapse?: () => void;
   onClose?: () => void;
 }
 
@@ -79,7 +79,6 @@ export function Sidebar({
   availableLevels,
   currentLevel,
   collapsed = false,
-  onToggleCollapse,
   onClose,
 }: SidebarProps) {
   const pathname = usePathname();
@@ -94,76 +93,73 @@ export function Sidebar({
   const isCourseActive = (id: string) => pathname === `/course/${id}`;
 
   return (
-    <nav className={cn(
-      "flex h-full flex-col overflow-y-auto transition-all duration-normal",
-      collapsed ? "overflow-x-hidden" : "",
-    )}>
-      <div className="flex items-center justify-between px-4 pt-5 pb-2">
+    <TooltipProvider delay={150}>
+      <nav className={cn(
+        "flex h-full flex-col overflow-y-auto transition-all duration-300 ease-in-out",
+        collapsed ? "overflow-x-hidden" : "",
+      )}>
+      <div className={cn(
+        "flex pt-5 pb-3",
+        collapsed ? "justify-center px-0" : "justify-between px-4",
+      )}>
         <Link href="/" className="flex items-center gap-2 min-w-0" onClick={onClose}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_12px_24px_rgba(122,16,48,0.2)]">
             <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.098L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.098L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.098L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.098z" />
             </svg>
           </div>
           <span className={cn(
-            "text-lg font-bold text-gray-900 transition-opacity duration-normal",
-            collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100",
+            "text-lg font-bold text-gray-900 transition-all duration-300 ease-in-out",
+            collapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100",
           )}>
             UniPastQ
           </span>
         </Link>
-        {onToggleCollapse && (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="shrink-0 rounded-md p-1.5 text-gray-400 transition-all duration-fast hover:bg-gray-100 hover:text-gray-600"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <svg
-              className={cn(
-                "h-4 w-4 transition-transform duration-normal",
-                collapsed && "rotate-180",
-              )}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          </button>
-        )}
       </div>
 
-      <div className="px-3 py-3">
-        <div className="space-y-1">
+      <div className={cn("py-3", collapsed ? "px-0" : "px-3")}>
+        <div className={cn(
+          "flex flex-col items-center",
+          collapsed ? "gap-3" : "space-y-1",
+        )}>
           {mainNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
-                collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
-                isNavActive(item.href)
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-gray-700 hover:bg-gray-50",
+            <Tooltip key={item.href}>
+              <TooltipTrigger
+                render={(
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    aria-label={item.label}
+                  />
+                )}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-300 ease-in-out",
+                  collapsed ? "h-11 w-11 justify-center p-0" : "px-3 py-2.5",
+                  isNavActive(item.href)
+                    ? collapsed
+                      ? "bg-[#7A1030] text-white shadow-[0_12px_24px_rgba(122,16,48,0.18)]"
+                      : "bg-secondary/15 text-primary ring-1 ring-secondary/20"
+                    : collapsed
+                      ? "bg-primary/10 text-primary hover:bg-primary/15"
+                      : "text-gray-700 hover:bg-secondary/10 hover:text-secondary",
+                )}
+              >
+                <span className="shrink-0">
+                  {item.icon}
+                </span>
+                <span className={cn(
+                  "transition-all duration-300 ease-in-out",
+                  collapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100",
+                )}>
+                  {item.label}
+                </span>
+              </TooltipTrigger>
+              {collapsed && (
+                <TooltipContent side="right">
+                  {item.label}
+                </TooltipContent>
               )}
-              title={collapsed ? item.label : undefined}
-            >
-              <span className={cn(
-                "shrink-0",
-                isNavActive(item.href) ? "text-primary-600" : "text-gray-400",
-              )}>
-                {item.icon}
-              </span>
-              <span className={cn(
-                "transition-opacity duration-normal",
-                collapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100",
-              )}>
-                {item.label}
-              </span>
-            </Link>
+            </Tooltip>
           ))}
         </div>
       </div>
@@ -186,10 +182,10 @@ export function Sidebar({
                   href={`/course/${course.id}`}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors duration-fast",
+                    "flex items-center gap-2 rounded-2xl px-3 py-2 text-sm transition-all duration-fast",
                     isCourseActive(course.id)
-                      ? "bg-primary-50 font-medium text-primary-700"
-                      : "text-gray-700 hover:bg-gray-100",
+                      ? "bg-secondary/15 font-medium text-primary ring-1 ring-secondary/20"
+                      : "text-gray-700 hover:bg-secondary/10 hover:text-secondary",
                   )}
                 >
                   <span className="font-mono text-xs text-gray-400">{course.code}</span>
@@ -211,7 +207,7 @@ export function Sidebar({
                   <button
                     type="button"
                     onClick={() => setOpenLevel(openLevel === level ? 0 : level)}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-fast hover:bg-gray-100"
+                    className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-fast hover:bg-secondary/10 hover:text-secondary"
                   >
                     <svg
                       className={cn(
@@ -236,10 +232,10 @@ export function Sidebar({
                           href={`/course/${course.id}`}
                           onClick={onClose}
                           className={cn(
-                            "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors duration-fast",
+                            "flex items-center gap-2 rounded-2xl px-3 py-1.5 text-sm transition-all duration-fast",
                             isCourseActive(course.id)
-                             ? "bg-primary-50 font-medium text-primary-700"
-                              : "text-gray-700 hover:bg-gray-100",
+                             ? "bg-secondary/15 font-medium text-primary ring-1 ring-secondary/20"
+                              : "text-gray-700 hover:bg-secondary/10 hover:text-secondary",
                           )}
                         >
                           <span className="font-mono text-xs text-gray-400">{course.code}</span>
@@ -253,6 +249,7 @@ export function Sidebar({
           </div>
         </>
       )}
-    </nav>
+      </nav>
+    </TooltipProvider>
   );
 }

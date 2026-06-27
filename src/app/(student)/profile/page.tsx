@@ -64,39 +64,33 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-8">
-      <div className="animate-fade-in-down">
-        <h2 className="text-xl font-semibold text-gray-900">Profile</h2>
+      <div className="rounded-[1.75rem] border border-white/70 bg-white/70 p-5 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl">
+        <h2 className="text-xl font-semibold text-primary">Profile</h2>
       </div>
 
-      <div className="animate-fade-in-up stagger-1 rounded-lg border border-gray-200 bg-white p-6">
+      <div className="rounded-[1.75rem] border border-white/70 bg-white/75 p-6 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl">
         <dl className="space-y-4">
-          <div className="transition-colors hover:bg-gray-50 -mx-6 -my-4 px-6 py-4 first:rounded-t-lg last:rounded-b-lg">
+          <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Name</dt>
             <dd className="mt-1 text-sm text-gray-900">{profile.full_name}</dd>
           </div>
-          <div className="transition-colors hover:bg-gray-50 -mx-6 -my-4 px-6 py-4 first:rounded-t-lg last:rounded-b-lg">
+          <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Email</dt>
             <dd className="mt-1 text-sm text-gray-900">{user.email}</dd>
           </div>
-          <div className="transition-colors hover:bg-gray-50 -mx-6 -my-4 px-6 py-4 first:rounded-t-lg last:rounded-b-lg">
+          <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Matric</dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {profile.matric_number}
-            </dd>
+            <dd className="mt-1 text-sm text-gray-900">{profile.matric_number}</dd>
           </div>
-          <div className="transition-colors hover:bg-gray-50 -mx-6 -my-4 px-6 py-4 first:rounded-t-lg last:rounded-b-lg">
+          <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Department</dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {dept?.name || "—"}
-            </dd>
+            <dd className="mt-1 text-sm text-gray-900">{dept?.name || "—"}</dd>
           </div>
-          <div className="transition-colors hover:bg-gray-50 -mx-6 -my-4 px-6 py-4 first:rounded-t-lg last:rounded-b-lg">
+          <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Current level</dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {profile.current_level}
-            </dd>
+            <dd className="mt-1 text-sm text-gray-900">{profile.current_level}</dd>
           </div>
-          <div className="transition-colors hover:bg-gray-50 -mx-6 -my-4 px-6 py-4 first:rounded-t-lg last:rounded-b-lg">
+          <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">
               Upload obligation
             </dt>
@@ -120,7 +114,7 @@ export default async function ProfilePage() {
               return (
                 <div
                   key={u.id}
-                  className="animate-fade-in-up flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 transition-all duration-normal hover:-translate-y-0.5 hover:shadow-sm"
+                  className="animate-fade-in-up flex items-center justify-between rounded-2xl border border-white/70 bg-white/75 p-4 shadow-[0_14px_30px_rgba(63,39,50,0.06)] transition-all duration-normal hover:-translate-y-0.5 hover:border-secondary/30 hover:shadow-[0_18px_38px_rgba(63,39,50,0.12)]"
                   style={{ animationDelay: `${idx * 60}ms` }}
                 >
                   <p className="text-sm text-gray-900">
@@ -130,7 +124,7 @@ export default async function ProfilePage() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       u.status === "published"
-                        ? "bg-success-50 text-success-600"
+                        ? "bg-secondary/10 text-secondary"
                         : u.status === "rejected"
                           ? "bg-danger-50 text-danger-600"
                           : "bg-warning-50 text-warning-600"

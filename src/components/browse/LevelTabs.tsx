@@ -26,10 +26,10 @@ export function LevelTabs({ levels, activeLevel }: LevelTabsProps) {
           key={level}
           onClick={() => handleLevelChange(level)}
           className={cn(
-            "relative rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-all duration-normal",
+            "relative rounded-2xl px-4 py-2 text-sm font-medium whitespace-nowrap transition-all duration-normal",
             activeLevel === level
-              ? "bg-primary-600 text-white shadow-soft"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200",
+              ? "bg-secondary text-white shadow-[0_14px_28px_rgba(212,117,10,0.2)]"
+              : "bg-white/80 text-gray-700 hover:bg-secondary/10 hover:text-secondary",
           )}
         >
           {level} Level

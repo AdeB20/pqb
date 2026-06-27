@@ -62,12 +62,12 @@ export default async function CoursePage({
     <div className="space-y-6">
       <div className="animate-fade-in-down">
         <p className="text-sm text-gray-500">
-          <Link href="/dashboard" className="transition-colors hover:text-primary-600">
+          <Link href="/dashboard" className="transition-colors hover:text-secondary">
             Dashboard
           </Link>{" "}
           / {deptName}
         </p>
-        <h2 className="mt-1 text-xl font-semibold text-gray-900">
+        <h2 className="mt-1 text-xl font-semibold text-primary">
           <span className="font-mono">{course.code}</span> — {course.title}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
@@ -84,7 +84,7 @@ export default async function CoursePage({
         />
         <Link
           href={`/upload?courseId=${params.id}`}
-          className="ml-auto inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-normal hover:bg-primary-700 hover:shadow-md active:scale-[0.98]"
+          className="ml-auto inline-flex items-center rounded-2xl bg-primary px-4 py-2 text-sm font-medium text-white transition-all duration-normal hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-[0_16px_30px_rgba(122,16,48,0.2)] active:scale-[0.98]"
         >
           <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -102,7 +102,7 @@ export default async function CoursePage({
 
       <Link
         href={`/upload?courseId=${params.id}`}
-        className="fixed bottom-20 right-4 z-40 rounded-full bg-primary-600 p-3 text-white shadow-lg transition-all duration-normal hover:bg-primary-700 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 lg:hidden"
+        className="fixed bottom-20 right-4 z-40 rounded-full bg-primary p-3 text-white shadow-[0_18px_35px_rgba(122,16,48,0.22)] transition-all duration-normal hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-[0_22px_40px_rgba(122,16,48,0.26)] active:scale-95 lg:hidden"
         aria-label="Upload past question"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

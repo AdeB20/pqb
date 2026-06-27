@@ -55,8 +55,8 @@ export function StudentLayoutClient({
     <ProfileContext.Provider value={profile}>
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside className={cn(
-          "hidden shrink-0 border-r border-gray-200 bg-white transition-all duration-normal lg:block",
-          sidebarCollapsed ? "w-14" : "w-60",
+          "hidden shrink-0 border-r border-white/70 bg-white/65 shadow-[12px_0_30px_rgba(63,39,50,0.06)] backdrop-blur-xl transition-all duration-300 ease-in-out lg:block",
+          sidebarCollapsed ? "w-16" : "w-60",
         )}>
           <Sidebar
             generalCourses={generalCourses}
@@ -65,7 +65,6 @@ export function StudentLayoutClient({
             availableLevels={availableLevels}
             currentLevel={profile.currentLevel}
             collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </aside>
 
@@ -82,6 +81,8 @@ export function StudentLayoutClient({
         <div className="flex flex-1 flex-col">
           <Header
             onMenuClick={() => setMobileMenuOpen(true)}
+            onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+            sidebarCollapsed={sidebarCollapsed}
             userName={profile.fullName}
           />
 
@@ -89,8 +90,8 @@ export function StudentLayoutClient({
             <ObligationBanner daysRemaining={profile.daysRemaining} />
           )}
 
-          <main className="flex-1 overflow-auto p-4 pb-20 lg:p-8 lg:pb-8">
-            <div className="mx-auto max-w-[900px]">{children}</div>
+          <main className="flex-1 overflow-auto p-4 pb-24 lg:p-8 lg:pb-8">
+            <div className="mx-auto w-full max-w-[1040px]">{children}</div>
           </main>
         </div>
 

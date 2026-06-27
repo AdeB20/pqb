@@ -43,7 +43,7 @@ export function UploadForm({ courses: initialCourses }: { courses: Course[] }) {
     setValue,
     formState: { isSubmitting },
   } = useForm<UploadData>({
-    resolver: zodResolver(uploadSchema) as any,
+    resolver: zodResolver(uploadSchema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     defaultValues: {
       courseId: preSelectedCourseId || "",
       year: new Date().getFullYear(),

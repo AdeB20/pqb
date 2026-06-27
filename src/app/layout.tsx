@@ -28,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-gray-50 font-sans text-gray-700 antialiased [scrollbar-width:thin]">
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased [scrollbar-width:thin] selection:bg-secondary selection:text-white">
         {children}
       </body>
     </html>

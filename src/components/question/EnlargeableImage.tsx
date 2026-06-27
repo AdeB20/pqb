@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 
-export function EnlargeableImage({ src, alt, year }: { src: string; alt: string; year: number }) {
+export function EnlargeableImage({ src, alt, year: _year }: { src: string; alt: string; year: number }) {
   const [open, setOpen] = useState(false);
 
   return (

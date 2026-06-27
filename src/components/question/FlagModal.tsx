@@ -72,7 +72,7 @@ export function FlagModal({ questionId }: FlagModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        className="rounded-md px-3 py-1.5 text-xs font-medium text-gray-500 transition-all duration-normal hover:bg-danger-50 hover:text-danger-600"
+        className="rounded-2xl px-3 py-1.5 text-xs font-medium text-gray-500 transition-all duration-normal hover:bg-secondary/10 hover:text-secondary"
         aria-label="Flag this question"
       >
         Flag
@@ -89,7 +89,7 @@ export function FlagModal({ questionId }: FlagModalProps) {
             {reasons.map((r) => (
               <label
                 key={r.value}
-                className="flex cursor-pointer items-center gap-3 rounded-md border border-gray-200 p-3 text-sm transition-all duration-fast hover:bg-gray-50 has-checked:border-primary-600 has-checked:bg-primary-50"
+                className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/70 bg-white/70 p-3 text-sm transition-all duration-fast hover:bg-secondary/5 has-checked:border-secondary has-checked:bg-secondary/10"
               >
                 <input
                   type="radio"
@@ -97,7 +97,7 @@ export function FlagModal({ questionId }: FlagModalProps) {
                   value={r.value}
                   checked={selected === r.value}
                   onChange={(e) => setSelected(e.target.value)}
-                  className="text-primary-600 transition-all"
+                  className="text-secondary transition-all"
                 />
                 {r.label}
               </label>
@@ -109,7 +109,7 @@ export function FlagModal({ questionId }: FlagModalProps) {
               type="button"
               disabled={!selected}
               onClick={handleSubmit}
-              className="w-full rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-normal hover:bg-primary-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-2xl bg-primary px-4 py-2 text-sm font-medium text-white transition-all duration-normal hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-[0_16px_30px_rgba(122,16,48,0.2)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Submit report
             </button>

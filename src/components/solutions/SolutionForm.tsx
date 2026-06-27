@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+import { sanitizeHtml } from "@/lib/utils";
 import { solutionSchema } from "@/lib/validations";
 
 type FormData = z.infer<typeof solutionSchema>;
@@ -71,7 +72,7 @@ export function SolutionForm({ questionId }: SolutionFormProps) {
     const { error: insertError } = await supabase.from("solutions").insert({
       question_id: questionId,
       submitted_by: profile.id,
-      body: data.body || null,
+      body: data.body ? sanitizeHtml(data.body) : null,
       file_url: fileUrl,
       status: "published",
     } as never);

@@ -96,14 +96,14 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-8">
-      <div className="animate-fade-in-down flex items-start justify-between">
+      <div className="animate-fade-in-down flex flex-col gap-4 rounded-[1.75rem] border border-white/70 bg-white/70 p-5 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
+          <h2 className="text-xl font-semibold text-primary">Dashboard</h2>
           <p className="mt-1 text-sm text-gray-500">{dept?.name}</p>
         </div>
         <Link
           href="/upload"
-          className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all duration-normal hover:bg-primary-700 hover:shadow-md active:scale-[0.98]"
+          className="inline-flex items-center justify-center rounded-2xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition-all duration-normal hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-[0_16px_30px_rgba(122,16,48,0.2)] active:translate-y-0"
         >
           <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -134,7 +134,7 @@ export default async function DashboardPage({
 
       <Link
         href="/upload"
-        className="fixed bottom-20 right-4 z-40 rounded-full bg-primary-600 p-3 text-white shadow-lg transition-all duration-normal hover:bg-primary-700 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 lg:hidden"
+        className="fixed bottom-20 right-4 z-40 rounded-full bg-primary p-3 text-white shadow-[0_18px_35px_rgba(122,16,48,0.22)] transition-all duration-normal hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-[0_22px_40px_rgba(122,16,48,0.26)] active:scale-95 lg:hidden"
         aria-label="Upload past question"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

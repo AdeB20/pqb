@@ -106,7 +106,7 @@ export default async function QuestionPage({
   return (
     <div className="space-y-6">
       <p className="animate-fade-in-down text-sm text-gray-500">
-        <Link href="/dashboard" className="transition-colors hover:text-primary-600">
+        <Link href="/dashboard" className="transition-colors hover:text-secondary">
           Dashboard
         </Link>{" "}
         / {course.code}
@@ -114,7 +114,7 @@ export default async function QuestionPage({
 
       <div className="animate-fade-in-up stagger-1 flex items-start justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-primary">
             {question.year} —{" "}
             {question.semester === "first" ? "First" : "Second"} Semester
           </h2>
@@ -124,7 +124,7 @@ export default async function QuestionPage({
             {question.exam_type === "mid_semester" ? "Mid Semester" : "Examination"} ·{" "}
             <Badge
               variant="outline"
-              className="border-gray-300 bg-gray-50 text-xs text-gray-600"
+              className="border-secondary/25 bg-secondary/10 text-xs text-secondary"
             >
               {question.file_type.toUpperCase()}
             </Badge>
@@ -147,10 +147,10 @@ export default async function QuestionPage({
         )}
       </div>
 
-      <hr className="border-gray-200 animate-fade-in" />
+      <hr className="border-white/70 animate-fade-in" />
 
       <div className="animate-fade-in-up stagger-3">
-        <h3 className="text-lg font-medium text-gray-900">
+        <h3 className="text-lg font-medium text-primary">
           Community Solutions
         </h3>
         <SolutionList solutions={solutions} />

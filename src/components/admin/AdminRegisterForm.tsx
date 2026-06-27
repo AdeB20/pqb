@@ -4,10 +4,11 @@ import { useState } from "react";
 
 export function AdminRegisterForm({ secret }: { secret: string }) {
   const [step, setStep] = useState(0);
-  const [email] = useState("ifeoluwa.bankole05@gmail.com");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -52,8 +53,13 @@ export function AdminRegisterForm({ secret }: { secret: string }) {
 
   const createAccount = async () => {
     setError("");
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!PASSWORD_REGEX.test(password)) {
+      setError("Password must be at least 8 characters with uppercase, lowercase, number, and special character");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
     if (!fullName.trim()) {
@@ -101,8 +107,10 @@ export function AdminRegisterForm({ secret }: { secret: string }) {
                 <input
                   type="email"
                   value={email}
-                  disabled
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-500"
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  required
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
                 />
               </div>
               <button
@@ -171,7 +179,19 @@ export function AdminRegisterForm({ secret }: { secret: string }) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 8 characters"
+                  placeholder="At least 8 characters with uppercase, lowercase, number & special char"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat password"
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
                 />
               </div>

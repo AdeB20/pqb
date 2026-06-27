@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export function AdminLoginForm({ secret }: { secret: string }) {
   const supabase = createClient();
-  const [mode, setMode] = useState<"loading" | "login" | "set-password">("loading");
+  const [mode, setMode] = useState<"loading" | "login" | "forgot-password" | "reset-sent" | "set-password">("loading");
 
   // login form state
   const [email, setEmail] = useState("");
@@ -16,6 +16,9 @@ export function AdminLoginForm({ secret }: { secret: string }) {
   // set-password form state
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // forgot-password form state
+  const [resetEmail, setResetEmail] = useState("");
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -67,7 +70,7 @@ export function AdminLoginForm({ secret }: { secret: string }) {
 
       setMode("set-password");
     })();
-  }, []);
+  }, [supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,8 +114,9 @@ export function AdminLoginForm({ secret }: { secret: string }) {
     e.preventDefault();
     setError("");
 
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
+    const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!PASSWORD_REGEX.test(newPassword)) {
+      setError("Password must be at least 8 characters with uppercase, lowercase, number, and special character");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -129,6 +133,26 @@ export function AdminLoginForm({ secret }: { secret: string }) {
     }
 
     window.location.href = `/admin/${secret}/dashboard`;
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const redirectTo = `${window.location.origin}/admin/${secret}/login`;
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo,
+    });
+
+    if (resetErr) {
+      setError(resetErr.message);
+      setLoading(false);
+      return;
+    }
+
+    setMode("reset-sent");
+    setLoading(false);
   };
 
   if (mode === "loading") {
@@ -148,8 +172,8 @@ export function AdminLoginForm({ secret }: { secret: string }) {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
-            minLength={6}
-            placeholder="At least 6 characters"
+            minLength={8}
+            placeholder="At least 8 characters with uppercase, lowercase, number & special char"
             className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
           />
         </div>
@@ -163,7 +187,7 @@ export function AdminLoginForm({ secret }: { secret: string }) {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            minLength={6}
+            minLength={8}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
           />
         </div>
@@ -215,6 +239,74 @@ export function AdminLoginForm({ secret }: { secret: string }) {
       >
         {loading ? "Signing in..." : "Sign in"}
       </button>
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={() => { setMode("forgot-password"); setResetEmail(email); setError(""); }}
+          className="text-sm text-gray-500 hover:text-primary-600 transition-colors"
+        >
+          Forgot password?
+        </button>
+      </div>
     </form>
   );
+
+  if (mode === "forgot-password" || mode === "reset-sent") {
+    return (
+      <div className="space-y-4">
+        {mode === "forgot-password" ? (
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div>
+              <label htmlFor="resetEmail" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <input
+                id="resetEmail"
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+              />
+            </div>
+            {error && <p className="text-sm text-danger-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+            >
+              {loading ? "Sending..." : "Send reset link"}
+            </button>
+          </form>
+        ) : (
+          <div className="text-center space-y-3">
+            <p className="text-sm text-gray-700">
+              Check your email for the password reset link.
+            </p>
+            <p className="text-xs text-gray-500">
+              Didn&apos;t receive it?{" "}
+              <button
+                type="button"
+                onClick={() => { setMode("forgot-password"); setError(""); }}
+                className="text-primary-600 hover:underline"
+              >
+                Try again
+              </button>
+            </p>
+          </div>
+        )}
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => { setMode("login"); setError(""); }}
+            className="text-sm text-gray-500 hover:text-primary-600 transition-colors"
+          >
+            Back to sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }

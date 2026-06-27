@@ -116,13 +116,13 @@ export function OtpForm() {
             value={digit}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
-            className="h-12 w-12 rounded-md border border-gray-300 text-center text-lg font-semibold transition-all duration-normal focus:border-primary-600 focus:shadow-glow focus:outline-none"
-            style={digit ? { borderColor: "var(--color-primary-600)", boxShadow: "0 0 0 3px rgba(37,99,235,0.15)" } : undefined}
+            className="h-12 w-12 rounded-2xl border border-white/70 text-center text-lg font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition-all duration-normal focus:border-secondary focus:shadow-[0_0_0_4px_rgba(212,117,10,0.16)] focus:outline-none"
+            style={digit ? { borderColor: "var(--secondary)", boxShadow: "0 0 0 4px rgba(212,117,10,0.16)" } : undefined}
           />
         ))}
       </div>
 
-      <p className="text-sm text-gray-500 text-center">
+      <p className="text-center text-sm text-gray-500">
         {timeLeft > 0 ? (
           <>Code expires in <span className="font-medium text-gray-700">{formatTime(timeLeft)}</span></>
         ) : (
@@ -130,10 +130,10 @@ export function OtpForm() {
         )}
       </p>
 
-      {error && <p className="text-sm text-danger-600 text-center animate-fade-in">{error}</p>}
+      {error && <p className="text-center text-sm text-danger-600 animate-fade-in">{error}</p>}
 
       {isVerifying && (
-        <p className="text-sm text-gray-500 text-center inline-flex items-center justify-center gap-2">
+        <p className="inline-flex items-center justify-center gap-2 text-center text-sm text-gray-500">
           <svg className="h-4 w-4 animate-spinner" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -145,7 +145,8 @@ export function OtpForm() {
       {canResend && (
         <Button
           onClick={handleResend}
-          className="text-sm font-medium text-primary-600 transition-all duration-normal hover:text-primary-800 hover:underline"
+          variant="link"
+          className="text-sm font-medium"
         >
           Resend OTP
         </Button>

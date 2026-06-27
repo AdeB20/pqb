@@ -32,7 +32,7 @@ export function MobileSidebarSheet({
 }: MobileSidebarSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[260px] p-0">
+      <SheetContent side="left" className="w-[290px] p-0">
         <div className="pt-12">
           <Sidebar
             generalCourses={generalCourses}

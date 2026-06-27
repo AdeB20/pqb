@@ -82,12 +82,12 @@ export function AdminSidebar({
 
   return (
     <nav className="flex h-full flex-col">
-      <div className="flex items-center gap-3 border-b border-gray-100 px-6 py-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
+      <div className="flex items-center gap-3 border-b border-white/60 px-6 py-5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-[0_12px_24px_rgba(122,16,48,0.2)]">
           A
         </div>
         <div>
-          <p className="text-sm font-semibold text-gray-900">Admin Panel</p>
+          <p className="text-sm font-semibold text-primary">Admin Panel</p>
           <p className="text-xs text-gray-400">Super Admin</p>
         </div>
       </div>
@@ -101,11 +101,11 @@ export function AdminSidebar({
               key={item.href}
               href={href}
               onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            className={cn(
+                "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all",
                 isActive
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                  ? "bg-secondary/15 text-primary ring-1 ring-secondary/20"
+                  : "text-gray-600 hover:bg-secondary/10 hover:text-secondary",
               )}
             >
               {item.icon}
@@ -115,11 +115,11 @@ export function AdminSidebar({
         })}
       </div>
 
-      <div className="border-t border-gray-100 px-3 py-4">
+      <div className="border-t border-white/60 px-3 py-4">
         <form action="/auth/signout" method="post">
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-danger-50 hover:text-danger-600"
+            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-secondary/10 hover:text-secondary"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />

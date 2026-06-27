@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { checkRateLimit } from "@/lib/utils";
+import { checkDbRateLimit } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
@@ -19,6 +19,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
 
+    const allowedDomain = process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN;
+    if (allowedDomain && !email.toLowerCase().endsWith(allowedDomain)) {
+      logger.warn({ event: "account.create.invalid_domain", message: "Email domain not allowed", ip, email });
+      return NextResponse.json({ error: `Only ${allowedDomain} emails are accepted` }, { status: 400 });
+    }
+
     if (!PASSWORD_REGEX.test(password)) {
       logger.warn({ event: "account.create.weak_password", message: "Password does not meet strength requirements", ip, email });
       return NextResponse.json(
@@ -31,7 +37,7 @@ export async function POST(req: Request) {
     }
 
     const rateKey = `create-account:${ip}:${email.toLowerCase()}`;
-    if (!checkRateLimit(rateKey, 5, 60_000)) {
+    if (!(await checkDbRateLimit(rateKey, 5, 60_000))) {
       logger.warn({ event: "account.create.rate_limited", message: "Account creation rate limit hit", ip, email });
       return NextResponse.json(
         { error: "Too many account creation attempts. Please wait before trying again." },

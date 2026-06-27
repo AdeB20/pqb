@@ -38,8 +38,8 @@ export function FileDropzone({ onFileSelect, file }: FileDropzoneProps) {
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       className={`
-        flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-all duration-normal
-        ${dragOver ? "border-primary-600 bg-primary-50 scale-[1.01]" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"}
+        flex cursor-pointer flex-col items-center justify-center rounded-[1.75rem] border-2 border-dashed p-8 text-center transition-all duration-normal
+        ${dragOver ? "border-secondary bg-secondary/10 scale-[1.01]" : "border-white/70 bg-white/75 hover:border-secondary/40 hover:bg-secondary/5"}
         ${file ? "border-success-600 bg-success-50" : ""}
       `}
     >
@@ -55,6 +55,7 @@ export function FileDropzone({ onFileSelect, file }: FileDropzoneProps) {
             {(file.size / 1024 / 1024).toFixed(2)} MB
           </p>
           <Button
+            variant="ghost"
             onClick={() => onFileSelect(null)}
             className="text-xs font-medium text-danger-600 transition-colors hover:text-danger-800"
           >
@@ -68,7 +69,7 @@ export function FileDropzone({ onFileSelect, file }: FileDropzoneProps) {
           </svg>
           <p className="text-sm text-gray-500">
             Drag and drop, or{" "}
-            <span className="font-medium text-primary-600">browse</span>
+            <span className="font-medium text-secondary">browse</span>
           </p>
           <p className="mt-1 text-xs text-gray-400">
             PDF, JPG, or PNG — max 10MB

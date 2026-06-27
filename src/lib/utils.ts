@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { createHash } from "crypto";
+import { createServiceClient } from "./supabase/service";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -112,4 +113,41 @@ export function sanitizeHtml(input: string): string {
 const SEMESTERS = ["first", "second"] as const;
 export function isValidSemester(value: string): value is "first" | "second" {
   return SEMESTERS.includes(value as typeof SEMESTERS[number]);
+}
+
+export async function checkDbRateLimit(
+  key: string,
+  maxAttempts: number,
+  windowMs: number,
+): Promise<boolean> {
+  try {
+    const service = createServiceClient();
+    const expiresAt = new Date(Date.now() + windowMs).toISOString();
+
+    const { data: existing } = await service
+      .from("rate_limits" as never)
+      .select("count, expires_at")
+      .eq("key", key)
+      .maybeSingle();
+
+    if (existing) {
+      const row = existing as unknown as { count: number; expires_at: string };
+      if (new Date(row.expires_at).getTime() > Date.now()) {
+        if (row.count >= maxAttempts) return false;
+        await service.from("rate_limits" as never)
+          .update({ count: row.count + 1 } as never)
+          .eq("key", key);
+        return true;
+      }
+    }
+
+    await service.from("rate_limits" as never).upsert({
+        key,
+        count: 1,
+        expires_at: expiresAt,
+      } as never);
+    return true;
+  } catch {
+    return checkRateLimit(key, maxAttempts, windowMs);
+  }
 }

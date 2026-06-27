@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { registerSchema } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type FormData = z.infer<typeof registerSchema>;
 
@@ -27,7 +29,6 @@ export function RegisterForm() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [levels, setLevels] = useState<number[]>([]);
   const [error, setError] = useState("");
-
   const [shakeKey, setShakeKey] = useState(0);
 
   const {
@@ -35,9 +36,10 @@ export function RegisterForm() {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(registerSchema) as any,
+    resolver: zodResolver(registerSchema) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
   });
 
   const selectedFaculty = watch("facultyId");
@@ -49,7 +51,9 @@ export function RegisterForm() {
     const headers = { apikey: anonKey };
     fetch(`${supabaseUrl}/rest/v1/faculties?select=id,name&order=name.asc`, { headers })
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => { if (data.length) setFaculties(data); })
+      .then((data) => {
+        if (data.length) setFaculties(data);
+      })
       .catch(() => {});
   }, []);
 
@@ -57,6 +61,8 @@ export function RegisterForm() {
     if (!selectedFaculty) {
       setDepartments([]);
       setLevels([]);
+      setValue("departmentId", "" as never);
+      setValue("currentLevel", "" as never);
       return;
     }
     fetch(
@@ -67,18 +73,23 @@ export function RegisterForm() {
       .then((data) => {
         setDepartments(data);
         setLevels([]);
-        (setValue as any)("departmentId", "");
+        setValue("departmentId", "" as never);
+        setValue("currentLevel", "" as never);
       });
   }, [selectedFaculty, setValue]);
 
   useEffect(() => {
     if (!selectedDepartment) {
       setLevels([]);
+      setValue("currentLevel", "" as never);
       return;
     }
     const dept = departments.find((d) => d.id === selectedDepartment);
-    if (dept) setLevels(dept.available_levels);
-  }, [selectedDepartment, departments]);
+    if (dept) {
+      setLevels(dept.available_levels);
+      setValue("currentLevel", "" as never);
+    }
+  }, [selectedDepartment, departments, setValue]);
 
   const onSubmit = async (data: FormData) => {
     setError("");
@@ -107,28 +118,26 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" key={shakeKey}>
-      <div className="animate-fade-in-up stagger-1">
-        <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left" key={shakeKey}>
+      <div className="w-full animate-fade-in-up stagger-1">
+        <label htmlFor="fullName" className="mb-2 block text-sm font-semibold text-gray-700">
           Full name
         </label>
-        <input
-          id="fullName"
-          {...register("fullName")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base transition-all duration-normal focus:border-primary-600 focus:shadow-glow focus:outline-none"
-        />
+        <Input id="fullName" placeholder="Your full name" className="h-12 rounded-xl focus-visible:ring-[#7A1030]" {...register("fullName")} />
         {errors.fullName && (
           <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.fullName.message}</p>
         )}
       </div>
 
-      <div className="animate-fade-in-up stagger-2">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+      <div className="w-full animate-fade-in-up stagger-2">
+        <label htmlFor="email" className="mb-2 block text-sm font-semibold text-gray-700">
           University email
         </label>
-        <input
+        <Input
           id="email"
           type="email"
+          placeholder="you@university.edu.ng"
+          className="h-12 rounded-xl focus-visible:ring-[#7A1030]"
           {...register("email")}
           onBlur={(e) => {
             const domain = process.env.NEXT_PUBLIC_UNIVERSITY_EMAIL_DOMAIN || "";
@@ -138,98 +147,116 @@ export function RegisterForm() {
               setError("");
             }
           }}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base transition-all duration-normal focus:border-primary-600 focus:shadow-glow focus:outline-none"
         />
         {errors.email && (
           <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.email.message}</p>
         )}
       </div>
 
-      <div className="animate-fade-in-up stagger-3">
-        <label htmlFor="matricNumber" className="block text-sm font-medium text-gray-700">
+      <div className="w-full animate-fade-in-up stagger-3">
+        <label htmlFor="matricNumber" className="mb-2 block text-sm font-semibold text-gray-700">
           Matric number
         </label>
-        <input
-          id="matricNumber"
-          {...register("matricNumber")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base transition-all duration-normal focus:border-primary-600 focus:shadow-glow focus:outline-none"
-        />
+        <Input id="matricNumber" placeholder="Matric number" className="h-12 rounded-xl focus-visible:ring-[#7A1030]" {...register("matricNumber")} />
         {errors.matricNumber && (
           <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.matricNumber.message}</p>
         )}
       </div>
 
-      <div className="animate-fade-in-up stagger-4">
-        <label htmlFor="facultyId" className="block text-sm font-medium text-gray-700">
-          Faculty
-        </label>
-        <select
-          id="facultyId"
-          {...register("facultyId")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base transition-all duration-normal focus:border-primary-600 focus:shadow-glow focus:outline-none"
-        >
-          <option value="">Select faculty</option>
-          {faculties.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </select>
-        {errors.facultyId && (
-          <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.facultyId.message}</p>
-        )}
+      <div className="animate-fade-in-up stagger-4 rounded-3xl bg-white/60 p-4">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
+          Academic Info
+        </p>
+        <div className="space-y-4">
+          <div className="w-full">
+            <label htmlFor="facultyId" className="mb-2 block text-sm font-semibold text-gray-700">
+              Programme
+            </label>
+            <Controller
+              control={control}
+              name="facultyId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="h-12 w-full rounded-xl px-4 focus-visible:ring-[#7A1030]">
+                    <SelectValue placeholder="Select faculty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {faculties.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.facultyId && (
+              <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.facultyId.message}</p>
+            )}
+          </div>
+
+          <div className="w-full">
+            <label htmlFor="departmentId" className="mb-2 block text-sm font-semibold text-gray-700">
+              Department
+            </label>
+            <Controller
+              control={control}
+              name="departmentId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange} disabled={!selectedFaculty}>
+                  <SelectTrigger className="h-12 w-full rounded-xl px-4 focus-visible:ring-[#7A1030]">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.departmentId && (
+              <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.departmentId.message}</p>
+            )}
+          </div>
+
+          <div className="w-full">
+            <label htmlFor="currentLevel" className="mb-2 block text-sm font-semibold text-gray-700">
+              Current level
+            </label>
+            <Controller
+              control={control}
+              name="currentLevel"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange} disabled={!selectedDepartment}>
+                  <SelectTrigger className="h-12 w-full rounded-xl px-4 focus-visible:ring-[#7A1030]">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {levels.map((l) => (
+                      <SelectItem key={l} value={String(l)}>
+                        {l} Level
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.currentLevel && (
+              <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.currentLevel.message}</p>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="animate-fade-in-up stagger-5">
-        <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700">
-          Department
-        </label>
-        <select
-          id="departmentId"
-          {...register("departmentId")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base transition-all duration-normal focus:border-primary-600 focus:shadow-glow focus:outline-none"
-        >
-          <option value="">Select department</option>
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-        {errors.departmentId && (
-          <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.departmentId.message}</p>
-        )}
-      </div>
-
-      <div className="animate-fade-in-up stagger-6">
-        <label htmlFor="currentLevel" className="block text-sm font-medium text-gray-700">
-          Current level
-        </label>
-        <select
-          id="currentLevel"
-          {...register("currentLevel")}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3.5 py-2.5 text-base transition-all duration-normal focus:border-primary-600 focus:shadow-glow focus:outline-none"
-        >
-          <option value="">Select level</option>
-          {levels.map((l) => (
-            <option key={l} value={l}>
-              {l} Level
-            </option>
-          ))}
-        </select>
-        {errors.currentLevel && (
-          <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.currentLevel.message}</p>
-        )}
-      </div>
-
-      {error && (
-        <p className="text-sm text-danger-600 animate-fade-in">{error}</p>
-      )}
+      {error && <p className="text-sm text-danger-600 animate-fade-in">{error}</p>}
 
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white transition-all duration-normal hover:bg-primary-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full rounded-xl py-5 text-md font-semibold"
       >
         {isSubmitting ? (
           <span className="inline-flex items-center gap-2">
@@ -239,7 +266,7 @@ export function RegisterForm() {
             </svg>
             Sending code...
           </span>
-        ) : "Send OTP"}
+        ) : "Continue →"}
       </Button>
     </form>
   );

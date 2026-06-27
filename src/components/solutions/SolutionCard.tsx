@@ -39,6 +39,7 @@ export function SolutionCard({
                   className="group relative block overflow-hidden rounded-lg border border-gray-200"
                   style={{ maxHeight: 400, maxWidth: 500 }}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/api/storage/${fileUrl}`}
                     alt="Solution attachment"

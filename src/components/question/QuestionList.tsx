@@ -21,7 +21,7 @@ interface QuestionListProps {
 export function QuestionList({ questions, emptyMessage }: QuestionListProps) {
   if (questions.length === 0) {
     return (
-      <div className="animate-fade-in rounded-lg border border-gray-200 bg-white p-8 text-center">
+      <div className="clay-surface animate-fade-in p-8 text-center">
         <p className="text-gray-500">{emptyMessage || "No questions found."}</p>
       </div>
     );
