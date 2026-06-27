@@ -15,11 +15,25 @@ export function AdminUploadForm({ secret: _secret }: { secret: string }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [showAddCourse, setShowAddCourse] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newProgrammeId, setNewProgrammeId] = useState("");
+  const [newLevel, setNewLevel] = useState("100");
+  const [programmes, setProgrammes] = useState<{ id: string; name: string }[]>([]);
+  const [newCourseError, setNewCourseError] = useState("");
+  const [creatingCourse, setCreatingCourse] = useState(false);
+
   useEffect(() => {
     fetch("/api/admin?action=courses")
       .then((r) => r.json())
       .then((data) => {
         if (data.courses) setCourses(data.courses);
+      });
+    fetch("/api/admin?action=programmes")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.programmes) setProgrammes(data.programmes);
       });
   }, []);
 
@@ -74,17 +88,96 @@ export function AdminUploadForm({ secret: _secret }: { secret: string }) {
     setLoading(false);
   }
 
+  async function handleCreateCourse(e: React.FormEvent) {
+    e.preventDefault();
+    setNewCourseError("");
+    if (!newCode.trim() || !newTitle.trim() || !newProgrammeId) {
+      setNewCourseError("All fields are required");
+      return;
+    }
+    setCreatingCourse(true);
+    try {
+      const res = await fetch("/api/admin?action=create-course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: newCode.trim(),
+          title: newTitle.trim(),
+          programme_id: newProgrammeId,
+          level: parseInt(newLevel),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create course");
+      const newCourse = data.course;
+      setCourses((prev) => [...prev, newCourse].sort((a, b) => a.code.localeCompare(b.code)));
+      setCourseId(newCourse.id);
+      setShowAddCourse(false);
+      setNewCode("");
+      setNewTitle("");
+      setNewProgrammeId("");
+      setNewLevel("100");
+    } catch (err) {
+      setNewCourseError(err instanceof Error ? err.message : "Error creating course");
+    }
+    setCreatingCourse(false);
+  }
+
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
       <div>
         <label className="block text-sm font-medium text-gray-700">Course</label>
-        <select value={courseId} onChange={(e) => setCourseId(e.target.value)} required
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
-          <option value="">Select course</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.code} — {c.title}</option>
-          ))}
-        </select>
+        {showAddCourse ? (
+          <div className="mt-1 space-y-3">
+            <input type="text" placeholder="Course Code (e.g. CSC 401)" value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100" />
+            <input type="text" placeholder="Course Name (e.g. Operating Systems)" value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100" />
+            <select value={newProgrammeId} onChange={(e) => setNewProgrammeId(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
+              <option value="">Select programme</option>
+              {programmes.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <select value={newLevel} onChange={(e) => setNewLevel(e.target.value)}
+              className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
+              {[100, 200, 300, 400, 500].map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <button type="button" onClick={handleCreateCourse} disabled={creatingCourse}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50">
+                {creatingCourse ? "Creating..." : "Create Course"}
+              </button>
+              <button type="button" onClick={() => setShowAddCourse(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+                Cancel
+              </button>
+            </div>
+            {newCourseError && (
+              <p className="text-sm text-danger-600">{newCourseError}</p>
+            )}
+          </div>
+        ) : (
+          <select value={courseId} onChange={(e) => {
+            if (e.target.value === "__add_new__") {
+              setShowAddCourse(true);
+            } else {
+              setCourseId(e.target.value);
+            }
+          }} required
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
+            <option value="">Select course</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>{c.code} — {c.title}</option>
+            ))}
+            <option value="__add_new__">+ Add new course...</option>
+          </select>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -15,8 +15,8 @@ interface MobileSidebarSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   generalCourses: Course[];
-  departmentCourses: Course[];
-  departmentName: string;
+  programmeCourses: Course[];
+  programmeName: string;
   availableLevels: number[];
   currentLevel: number;
 }
@@ -25,8 +25,8 @@ export function MobileSidebarSheet({
   open,
   onOpenChange,
   generalCourses,
-  departmentCourses,
-  departmentName,
+  programmeCourses,
+  programmeName,
   availableLevels,
   currentLevel,
 }: MobileSidebarSheetProps) {
@@ -36,8 +36,8 @@ export function MobileSidebarSheet({
         <div className="pt-12">
           <Sidebar
             generalCourses={generalCourses}
-            departmentCourses={departmentCourses}
-            departmentName={departmentName}
+            programmeCourses={programmeCourses}
+            programmeName={programmeName}
             availableLevels={availableLevels}
             currentLevel={currentLevel}
             onClose={() => onOpenChange(false)}

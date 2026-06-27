@@ -35,7 +35,7 @@ export default async function ProfilePage() {
     upload_obligation_days: number;
   } | null;
 
-  const dept = profile.department;
+  const prog = profile.department;
   const daysRemaining = profile.last_upload_at
     ? Math.max(
         0,
@@ -83,8 +83,8 @@ export default async function ProfilePage() {
             <dd className="mt-1 text-sm text-gray-900">{profile.matric_number}</dd>
           </div>
           <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
-            <dt className="text-xs font-medium uppercase text-gray-500">Department</dt>
-            <dd className="mt-1 text-sm text-gray-900">{dept?.name || "—"}</dd>
+            <dt className="text-xs font-medium uppercase text-gray-500">Programme</dt>
+            <dd className="mt-1 text-sm text-gray-900">{prog?.name || "—"}</dd>
           </div>
           <div className="transition-colors hover:bg-secondary/5 -mx-6 -my-4 px-6 py-4 first:rounded-t-[1.5rem] last:rounded-b-[1.5rem]">
             <dt className="text-xs font-medium uppercase text-gray-500">Current level</dt>

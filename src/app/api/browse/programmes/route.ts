@@ -21,5 +21,5 @@ export async function GET(req: NextRequest) {
     .eq("faculty_id", facultyId)
     .order("name");
 
-  return NextResponse.json({ departments: data ?? [] });
+  return NextResponse.json({ programmes: data ?? [] });
 }

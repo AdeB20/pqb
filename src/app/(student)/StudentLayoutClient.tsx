@@ -33,19 +33,19 @@ export function useProfile() {
 
 interface StudentLayoutClientProps {
   profile: StudentProfile;
-  departmentName: string;
+  programmeName: string;
   availableLevels: number[];
   generalCourses: Course[];
-  departmentCourses: Course[];
+  programmeCourses: Course[];
   children: React.ReactNode;
 }
 
 export function StudentLayoutClient({
   profile,
-  departmentName,
+  programmeName,
   availableLevels,
   generalCourses,
-  departmentCourses,
+  programmeCourses,
   children,
 }: StudentLayoutClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -53,15 +53,15 @@ export function StudentLayoutClient({
 
   return (
     <ProfileContext.Provider value={profile}>
-      <div className="flex min-h-screen flex-col lg:flex-row">
+      <div className="flex min-h-screen flex-col lg:h-screen lg:overflow-hidden lg:flex lg:flex-row">
         <aside className={cn(
-          "hidden shrink-0 border-r border-white/70 bg-white/65 shadow-[12px_0_30px_rgba(63,39,50,0.06)] backdrop-blur-xl transition-all duration-300 ease-in-out lg:block",
+          "hidden shrink-0 overflow-y-auto border-r border-white/70 bg-white/65 shadow-[12px_0_30px_rgba(63,39,50,0.06)] backdrop-blur-xl transition-all duration-300 ease-in-out lg:block",
           sidebarCollapsed ? "w-16" : "w-60",
         )}>
           <Sidebar
             generalCourses={generalCourses}
-            departmentCourses={departmentCourses}
-            departmentName={departmentName}
+            programmeCourses={programmeCourses}
+            programmeName={programmeName}
             availableLevels={availableLevels}
             currentLevel={profile.currentLevel}
             collapsed={sidebarCollapsed}
@@ -72,13 +72,13 @@ export function StudentLayoutClient({
           open={mobileMenuOpen}
           onOpenChange={setMobileMenuOpen}
           generalCourses={generalCourses}
-          departmentCourses={departmentCourses}
-          departmentName={departmentName}
+          programmeCourses={programmeCourses}
+          programmeName={programmeName}
           availableLevels={availableLevels}
           currentLevel={profile.currentLevel}
         />
 
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col lg:h-screen lg:overflow-hidden">
           <Header
             onMenuClick={() => setMobileMenuOpen(true)}
             onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -90,7 +90,7 @@ export function StudentLayoutClient({
             <ObligationBanner daysRemaining={profile.daysRemaining} />
           )}
 
-          <main className="flex-1 overflow-auto p-4 pb-24 lg:p-8 lg:pb-8">
+          <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8">
             <div className="mx-auto w-full max-w-[1040px]">{children}</div>
           </main>
         </div>

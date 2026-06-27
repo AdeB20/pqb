@@ -44,12 +44,12 @@ export default async function AdminSettingsPage({
         <div>
           <h3 className="text-sm font-semibold text-gray-900">Seed Data</h3>
           <p className="mt-0.5 text-xs text-gray-400">
-            Add faculties, departments, and courses to the system
+            Add faculties, programmes, and courses to the system
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <SeedForm secret={params.secret} type="faculty" />
-          <SeedForm secret={params.secret} type="department" />
+          <SeedForm secret={params.secret} type="programme" />
           <SeedForm secret={params.secret} type="course" />
         </div>
       </section>

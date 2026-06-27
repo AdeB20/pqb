@@ -52,8 +52,8 @@ const features = [
   },
   {
     icon: LayoutGrid,
-    title: "Department-Scoped Content",
-    description: "You only see what is relevant to your department.",
+    title: "Programme-Scoped Content",
+    description: "You only see what is relevant to your programme.",
   },
   {
     icon: CloudUpload,
@@ -75,7 +75,7 @@ const features = [
 const trustBadges = [
   "University-verified access",
   "AI-moderated quality",
-  "Department-scoped content",
+  "Programme-scoped content",
 ];
 
 const highlightRows = [
@@ -87,7 +87,7 @@ const highlightRows = [
   {
     icon: Upload,
     title: "Upload and Contribute",
-    description: "Add past questions for your department in seconds.",
+    description: "Add past questions for your programme in seconds.",
   },
   {
     icon: Brain,
@@ -122,7 +122,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="mt-6 max-w-2xl text-base leading-8 text-gray-600 sm:text-lg">
-                Access thousands of past questions from your department. Upload, study, and collaborate - all in one place.
+                Access thousands of past questions from your programme. Upload, study, and collaborate - all in one place.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -233,7 +233,7 @@ export default function LandingPage() {
                 Find the exact questions you need
               </h2>
               <p className="mt-4 text-gray-600">
-                Search by course, filter by year, and jump straight into the right study material for your department.
+                Search by course, filter by year, and jump straight into the right study material for your programme.
               </p>
 
               <div className="mt-6 space-y-3">
@@ -292,7 +292,7 @@ export default function LandingPage() {
                 {
                   icon: Shield,
                   title: "Course-Specific",
-                  description: "Questions organised exactly by your department and course code.",
+                  description: "Questions organised exactly by your programme and course code.",
                 },
                 {
                   icon: Sparkles,

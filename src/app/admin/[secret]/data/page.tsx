@@ -10,7 +10,7 @@ export default function AdminDataPage({
       <div>
         <h2 className="text-lg font-semibold text-gray-900">Data Overview</h2>
         <p className="mt-1 text-sm text-gray-500">
-          View all faculties, departments, and courses in the system
+          View all faculties, programmes, and courses in the system
         </p>
       </div>
       <DataOverview />

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminMobileSidebar } from "@/components/admin/AdminMobileSidebar";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
 export function AdminLayoutClient({
   children,
@@ -14,6 +15,8 @@ export function AdminLayoutClient({
 }) {
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [adminName, setAdminName] = useState("Admin");
 
   useEffect(() => {
     async function check() {
@@ -22,11 +25,16 @@ export function AdminLayoutClient({
       if (!user) { setIsAuthed(false); return; }
       const { data: raw } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, full_name")
         .eq("auth_user_id", user.id)
         .single();
-      const profile = raw as unknown as { role: string } | null;
-      setIsAuthed(profile?.role === "super_admin");
+      const profile = raw as unknown as { role: string; full_name: string } | null;
+      if (profile?.role === "super_admin") {
+        setIsAuthed(true);
+        if (profile.full_name) setAdminName(profile.full_name);
+      } else {
+        setIsAuthed(false);
+      }
     }
     check();
   }, []);
@@ -40,47 +48,72 @@ export function AdminLayoutClient({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 border-r border-white/70 bg-white/65 shadow-[12px_0_30px_rgba(63,39,50,0.06)] backdrop-blur-xl md:block">
-        <AdminSidebar secret={secret} />
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* DESKTOP SIDEBAR */}
+      <aside className={cn(
+        "hidden shrink-0 border-r border-white/70 bg-white/65 shadow-[12px_0_30px_rgba(63,39,50,0.06)] backdrop-blur-xl transition-all duration-300 ease-in-out md:block overflow-y-auto",
+        collapsed ? "w-16" : "w-56",
+      )}>
+        <AdminSidebar secret={secret} collapsed={collapsed} adminName={adminName} />
       </aside>
 
-      <AdminMobileSidebar
-        secret={secret}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      {/* Mobile sidebar sheet */}
+      <AdminMobileSidebar secret={secret} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-white/70 bg-white/80 shadow-[0_16px_35px_rgba(63,39,50,0.08)] backdrop-blur-xl">
-          <div className="flex items-center justify-between px-4 py-3 md:px-6">
+      {/* Main area */}
+      <div className="flex flex-1 flex-col h-screen overflow-hidden">
+
+        {/* HEADER */}
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/70 bg-white/80 shadow-[0_16px_35px_rgba(63,39,50,0.08)] backdrop-blur-xl px-4 gap-4">
+          {/* Left side: toggle + branding */}
+          <div className="flex items-center gap-3">
+            {/* Sidebar toggle (desktop) */}
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden md:inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+            {/* Mobile hamburger */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded-2xl p-2 text-gray-500 hover:bg-secondary/10 hover:text-secondary md:hidden"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 md:hidden"
               aria-label="Open sidebar"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
+            <span className="text-sm font-semibold text-gray-900">Admin Panel</span>
+          </div>
 
-            <div className="hidden md:block" />
+          {/* Right side: notifications + admin profile */}
+          <div className="flex items-center gap-3">
+            {/* Notification bell */}
+            <button className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
+            </button>
 
-            <form action="/auth/signout" method="post" className="md:hidden">
-              <button
-                type="submit"
-                className="flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-secondary/10 hover:text-secondary"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                </svg>
-                Sign out
-              </button>
-            </form>
+            {/* Admin profile */}
+            <div className="flex items-center gap-2 cursor-pointer">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white shrink-0">
+                {adminName.charAt(0).toUpperCase()}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-sm font-medium text-gray-900 leading-tight">{adminName}</p>
+                <p className="text-xs text-gray-500 leading-tight">Super Admin</p>
+              </div>
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        {/* PAGE CONTENT — scrolls independently */}
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
           {children}
         </main>
       </div>

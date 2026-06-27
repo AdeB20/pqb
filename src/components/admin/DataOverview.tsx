@@ -1,42 +1,44 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { BulkImportModal } from "./BulkImportModal";
 
-type Tab = "faculties" | "departments" | "courses";
+type Tab = "faculties" | "programmes" | "courses";
 
 type Faculty = { id: string; name: string; slug: string };
-type Department = { name: string; faculty_name: string };
+type Programme = { name: string; faculty_name: string };
 type Course = { code: string; title: string; level: number };
 
 export function DataOverview() {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [allDepts, setAllDepts] = useState<{ id: string; name: string }[]>([]);
+  const [allProgrammes, setAllProgrammes] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("faculties");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   const loadData = async () => {
     const [fRes, dRes, cRes] = await Promise.all([
       fetch("/api/admin?action=faculties"),
-      fetch("/api/admin?action=departments"),
+      fetch("/api/admin?action=programmes"),
       fetch("/api/admin?action=courses"),
     ]);
     const [fData, dData, cData] = await Promise.all([fRes.json(), dRes.json(), cRes.json()]);
     if (fData.faculties) setFaculties(fData.faculties);
-    if (dData.departments) setDepartments(dData.departments);
+    if (dData.programmes) setProgrammes(dData.programmes);
     if (cData.courses) setCourses(cData.courses);
   };
 
   useEffect(() => {
     async function init() {
       await loadData();
-      const r = await fetch("/api/admin?action=list-departments", { method: "GET" });
+      const r = await fetch("/api/admin?action=list-programmes", { method: "GET" });
       const d = await r.json();
-      if (d.departments) setAllDepts(d.departments);
+      if (d.programmes) setAllProgrammes(d.programmes);
       setLoading(false);
     }
     init();
@@ -50,7 +52,7 @@ export function DataOverview() {
 
     let action: string;
     if (tab === "faculties") action = "seed-faculty";
-    else if (tab === "departments") action = "seed-department";
+    else if (tab === "programmes") action = "seed-programme";
     else action = "seed-course";
 
     const res = await fetch(`/api/admin?action=${action}`, { method: "POST", body: formData });
@@ -62,9 +64,9 @@ export function DataOverview() {
       setShowForm(false);
       await loadData();
       if (tab === "courses") {
-        const r = await fetch("/api/admin?action=list-departments", { method: "POST" });
+        const r = await fetch("/api/admin?action=list-programmes", { method: "POST" });
         const d = await r.json();
-        if (d.departments) setAllDepts(d.departments);
+        if (d.programmes) setAllProgrammes(d.programmes);
       }
     } else {
       setMsg({ text: data.error || "Error", ok: false });
@@ -75,9 +77,9 @@ export function DataOverview() {
     () => faculties.filter((f) => f.name.toLowerCase().includes(search.toLowerCase())),
     [faculties, search],
   );
-  const filteredDepartments = useMemo(
-    () => departments.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()) || d.faculty_name.toLowerCase().includes(search.toLowerCase())),
-    [departments, search],
+  const filteredProgrammes = useMemo(
+    () => programmes.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()) || d.faculty_name.toLowerCase().includes(search.toLowerCase())),
+    [programmes, search],
   );
   const filteredCourses = useMemo(
     () => courses.filter((c) => c.code.toLowerCase().includes(search.toLowerCase()) || c.title.toLowerCase().includes(search.toLowerCase())),
@@ -86,7 +88,7 @@ export function DataOverview() {
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "faculties", label: "Faculties", count: faculties.length },
-    { key: "departments", label: "Departments", count: departments.length },
+    { key: "programmes", label: "Programmes", count: programmes.length },
     { key: "courses", label: "Courses", count: courses.length },
   ];
 
@@ -143,6 +145,15 @@ export function DataOverview() {
             </div>
             <div className="flex items-center gap-3">
               <button
+                onClick={() => { setShowBulkImport(true); }}
+                className="flex items-center gap-1.5 rounded-lg border border-primary-300 bg-white px-3 py-1.5 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Bulk Import
+              </button>
+              <button
                 onClick={() => { setShowForm(!showForm); setMsg(null); }}
                 className="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-700"
               >
@@ -184,10 +195,10 @@ export function DataOverview() {
                 </>
               )}
 
-              {tab === "departments" && (
+              {tab === "programmes" && (
                 <>
                   <div className="min-w-0 flex-1">
-                    <label className="block text-xs font-medium text-gray-700">Department name</label>
+                    <label className="block text-xs font-medium text-gray-700">Programme name</label>
                     <input name="name" type="text" required placeholder="e.g. Computer Science"
                       className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-primary-600 focus:ring-2 focus:ring-primary-100" />
                   </div>
@@ -203,7 +214,7 @@ export function DataOverview() {
                   </div>
                   <button type="submit"
                     className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700">
-                    Create Department
+                    Create Programme
                   </button>
                 </>
               )}
@@ -234,17 +245,17 @@ export function DataOverview() {
                     <label className="block text-xs font-medium text-gray-700">Scope</label>
                     <select name="scope" defaultValue="departmental"
                       className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
-                      <option value="departmental">Departmental</option>
+                      <option value="departmental">Programme</option>
                       <option value="shared">Shared</option>
                       <option value="general">General</option>
                     </select>
                   </div>
                   <div className="min-w-0 flex-[2]">
-                    <label className="block text-xs font-medium text-gray-700">Department</label>
+                    <label className="block text-xs font-medium text-gray-700">Programme</label>
                     <select name="department_id"
                       className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100">
                       <option value="">None (general)</option>
-                      {allDepts.map((d) => (
+                      {allProgrammes.map((d) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                       ))}
                     </select>
@@ -295,10 +306,10 @@ export function DataOverview() {
             )
           )}
 
-          {tab === "departments" && (
-            filteredDepartments.length > 0 ? (
+          {tab === "programmes" && (
+            filteredProgrammes.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredDepartments.map((d) => (
+                {filteredProgrammes.map((d) => (
                   <div key={d.name} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700 transition-colors hover:border-gray-200 hover:bg-white">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-100 text-indigo-700">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -317,10 +328,10 @@ export function DataOverview() {
                 <svg className="mb-3 h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m15-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
                 </svg>
-                <p className="text-sm text-gray-400">{search ? "No matching departments" : "No departments yet"}</p>
+                <p className="text-sm text-gray-400">{search ? "No matching programmes" : "No programmes yet"}</p>
                 {!search && (
                   <button onClick={() => setShowForm(true)} className="mt-3 text-sm font-medium text-primary-600 hover:text-primary-700">
-                    Add your first department
+                    Add your first programme
                   </button>
                 )}
               </div>
@@ -363,6 +374,12 @@ export function DataOverview() {
           )}
         </div>
       </div>
+
+      <BulkImportModal
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onSuccess={() => { loadData(); }}
+      />
     </div>
   );
 }

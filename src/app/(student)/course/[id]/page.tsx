@@ -53,7 +53,7 @@ export default async function CoursePage({
 
   const { data: questions } = await questionsQuery;
 
-  const deptName =
+  const programmeName =
     typeof course.department === "object" && course.department !== null
       ? (course.department as { name: string }).name
       : "";
@@ -65,13 +65,13 @@ export default async function CoursePage({
           <Link href="/dashboard" className="transition-colors hover:text-secondary">
             Dashboard
           </Link>{" "}
-          / {deptName}
+          / {programmeName}
         </p>
         <h2 className="mt-1 text-xl font-semibold text-primary">
           <span className="font-mono">{course.code}</span> — {course.title}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          {deptName} · Level {course.level} ·{" "}
+          {programmeName} · Level {course.level} ·{" "}
           {questions?.length || 0} past question
           {questions?.length !== 1 ? "s" : ""}
         </p>

@@ -36,7 +36,7 @@ export default async function StudentLayout({
     department: { id: string; name: string; available_levels: number[] };
   };
 
-  const dept = profile.department;
+  const prog = profile.department;
 
   const { data: rawOwnCourses } = await supabase
     .from("courses")
@@ -76,7 +76,7 @@ export default async function StudentLayout({
 
   const generalCourses =
     allCourses.filter((c) => c.scope === "general") || [];
-  const departmentCourses =
+  const programmeCourses =
     allCourses.filter((c) => c.scope !== "general") || [];
 
   const { data: rawSettings } = await supabase
@@ -109,10 +109,10 @@ export default async function StudentLayout({
         isLocked: profile.is_locked,
         daysRemaining,
       }}
-      departmentName={dept?.name || ""}
-      availableLevels={dept?.available_levels || []}
+      programmeName={prog?.name || ""}
+      availableLevels={prog?.available_levels || []}
       generalCourses={generalCourses}
-      departmentCourses={departmentCourses}
+      programmeCourses={programmeCourses}
     >
       {children}
     </StudentLayoutClient>

@@ -15,7 +15,7 @@ const bullets = [
   },
   {
     icon: Upload,
-    text: "Upload and contribute to your department",
+    text: "Upload and contribute to your programme",
   },
   {
     icon: ShieldCheck,

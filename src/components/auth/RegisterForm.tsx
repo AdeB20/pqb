@@ -17,7 +17,7 @@ interface Faculty {
   name: string;
 }
 
-interface Department {
+interface Programme {
   id: string;
   name: string;
   available_levels: number[];
@@ -26,7 +26,7 @@ interface Department {
 export function RegisterForm() {
   const router = useRouter();
   const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [levels, setLevels] = useState<number[]>([]);
   const [error, setError] = useState("");
   const [shakeKey, setShakeKey] = useState(0);
@@ -43,7 +43,7 @@ export function RegisterForm() {
   });
 
   const selectedFaculty = watch("facultyId");
-  const selectedDepartment = watch("departmentId");
+  const selectedProgramme = watch("departmentId");
 
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -59,7 +59,7 @@ export function RegisterForm() {
 
   useEffect(() => {
     if (!selectedFaculty) {
-      setDepartments([]);
+      setProgrammes([]);
       setLevels([]);
       setValue("departmentId", "" as never);
       setValue("currentLevel", "" as never);
@@ -71,7 +71,7 @@ export function RegisterForm() {
     )
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
-        setDepartments(data);
+        setProgrammes(data);
         setLevels([]);
         setValue("departmentId", "" as never);
         setValue("currentLevel", "" as never);
@@ -79,17 +79,17 @@ export function RegisterForm() {
   }, [selectedFaculty, setValue]);
 
   useEffect(() => {
-    if (!selectedDepartment) {
+    if (!selectedProgramme) {
       setLevels([]);
       setValue("currentLevel", "" as never);
       return;
     }
-    const dept = departments.find((d) => d.id === selectedDepartment);
-    if (dept) {
-      setLevels(dept.available_levels);
+    const prog = programmes.find((d) => d.id === selectedProgramme);
+    if (prog) {
+      setLevels(prog.available_levels);
       setValue("currentLevel", "" as never);
     }
-  }, [selectedDepartment, departments, setValue]);
+  }, [selectedProgramme, programmes, setValue]);
 
   const onSubmit = async (data: FormData) => {
     setError("");
@@ -197,7 +197,7 @@ export function RegisterForm() {
 
           <div className="w-full">
             <label htmlFor="departmentId" className="mb-2 block text-sm font-semibold text-gray-700">
-              Department
+              Programme
             </label>
             <Controller
               control={control}
@@ -205,10 +205,10 @@ export function RegisterForm() {
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange} disabled={!selectedFaculty}>
                   <SelectTrigger className="h-12 w-full rounded-xl px-4 focus-visible:ring-[#7A1030]">
-                    <SelectValue placeholder="Select department" />
+                    <SelectValue placeholder="Select programme" />
                   </SelectTrigger>
                   <SelectContent>
-                    {departments.map((d) => (
+                    {programmes.map((d) => (
                       <SelectItem key={d.id} value={d.id}>
                         {d.name}
                       </SelectItem>
@@ -230,7 +230,7 @@ export function RegisterForm() {
               control={control}
               name="currentLevel"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} disabled={!selectedDepartment}>
+                <Select value={field.value} onValueChange={field.onChange} disabled={!selectedProgramme}>
                   <SelectTrigger className="h-12 w-full rounded-xl px-4 focus-visible:ring-[#7A1030]">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>

@@ -74,25 +74,34 @@ const navItems = [
 export function AdminSidebar({
   secret,
   onClose,
+  collapsed = false,
+  adminName = "Admin",
 }: {
   secret: string;
   onClose?: () => void;
+  collapsed?: boolean;
+  adminName?: string;
 }) {
   const pathname = usePathname();
 
   return (
     <nav className="flex h-full flex-col">
-      <div className="flex items-center gap-3 border-b border-white/60 px-6 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-[0_12px_24px_rgba(122,16,48,0.2)]">
+      <div className={cn(
+        "flex items-center border-b border-white/60 py-5",
+        collapsed ? "justify-center px-3" : "px-6 gap-3",
+      )}>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-[0_12px_24px_rgba(122,16,48,0.2)]">
           A
         </div>
-        <div>
+        {!collapsed && (
           <p className="text-sm font-semibold text-primary">Admin Panel</p>
-          <p className="text-xs text-gray-400">Super Admin</p>
-        </div>
+        )}
       </div>
 
-      <div className="flex-1 space-y-1 px-3 py-4">
+      <div className={cn(
+        "flex-1 space-y-1 py-4",
+        collapsed ? "px-2" : "px-3",
+      )}>
         {navItems.map((item) => {
           const href = `/admin/${secret}${item.href}`;
           const isActive = pathname === href;
@@ -101,30 +110,51 @@ export function AdminSidebar({
               key={item.href}
               href={href}
               onClick={onClose}
-            className={cn(
-                "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all",
+              className={cn(
+                "flex items-center justify-start gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out",
+                collapsed && "justify-center",
                 isActive
                   ? "bg-secondary/15 text-primary ring-1 ring-secondary/20"
                   : "text-gray-600 hover:bg-secondary/10 hover:text-secondary",
               )}
+              title={collapsed ? item.label : undefined}
             >
               {item.icon}
-              {item.label}
+              <span className={cn(
+                "transition-all duration-300",
+                collapsed
+                  ? "max-w-0 opacity-0 overflow-hidden whitespace-nowrap pointer-events-none"
+                  : "max-w-[200px] opacity-100",
+              )}>
+                {item.label}
+              </span>
             </Link>
           );
         })}
       </div>
 
-      <div className="border-t border-white/60 px-3 py-4">
+      {/* Admin profile at bottom */}
+      <div className="mt-auto border-t border-white/60 px-3 py-4">
+        {!collapsed && (
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white shrink-0">
+              {adminName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{adminName}</p>
+              <p className="text-xs text-gray-500 truncate">Super Admin</p>
+            </div>
+          </div>
+        )}
         <form action="/auth/signout" method="post">
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-secondary/10 hover:text-secondary"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-secondary/10 hover:text-secondary"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
             </svg>
-            Sign out
+            {!collapsed && <span>Sign out</span>}
           </button>
         </form>
       </div>

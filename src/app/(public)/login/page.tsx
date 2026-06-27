@@ -10,7 +10,7 @@ export default function LoginPage() {
     <AuthShell
       page="login"
       headline="Welcome back. Your notes missed you."
-      subtext="Log in to continue browsing, saving, and contributing to your department's question bank."
+      subtext="Log in to continue browsing, saving, and contributing to your programme's question bank."
     >
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gray-500">

@@ -131,7 +131,7 @@ Evaluate all four criteria. Fail if ANY single criterion is not met:
 
 2. READABILITY: Is the image or PDF sufficiently clear and legible for a student to read and study from? Blurry, extremely dark, or partially obscured documents should fail this check.
 
-3. COURSE MATCH: Does the visible content of the document match the course it has been tagged as: "${courseCode} — ${courseName}"? Look for course codes, subject matter, department references, or any visible header information.
+3. COURSE MATCH: Does the visible content of the document match the course it has been tagged as: "${courseCode} — ${courseName}"? Look for course codes, subject matter, programme references, or any visible header information.
 
 4. SAFE CONTENT: Is the document free from harmful, offensive, sexually explicit, or completely unrelated content?
 

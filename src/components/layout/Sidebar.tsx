@@ -16,8 +16,8 @@ interface Course {
 
 interface SidebarProps {
   generalCourses: Course[];
-  departmentCourses: Course[];
-  departmentName: string;
+  programmeCourses: Course[];
+  programmeName: string;
   availableLevels: number[];
   currentLevel: number;
   collapsed?: boolean;
@@ -74,8 +74,8 @@ const mainNav = [
 
 export function Sidebar({
   generalCourses,
-  departmentCourses,
-  departmentName,
+  programmeCourses,
+  programmeName,
   availableLevels,
   currentLevel,
   collapsed = false,
@@ -86,7 +86,7 @@ export function Sidebar({
 
   const groupedByLevel = availableLevels.map((level) => ({
     level,
-    courses: departmentCourses.filter((c) => c.level === level),
+    courses: programmeCourses.filter((c) => c.level === level),
   }));
 
   const isNavActive = (href: string) => pathname === href;
@@ -100,7 +100,7 @@ export function Sidebar({
       )}>
       <div className={cn(
         "flex pt-5 pb-3",
-        collapsed ? "justify-center px-0" : "justify-between px-4",
+        collapsed ? "justify-start px-3" : "justify-between px-4",
       )}>
         <Link href="/" className="flex items-center gap-2 min-w-0" onClick={onClose}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_12px_24px_rgba(122,16,48,0.2)]">
@@ -109,8 +109,8 @@ export function Sidebar({
             </svg>
           </div>
           <span className={cn(
-            "text-lg font-bold text-gray-900 transition-all duration-300 ease-in-out",
-            collapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100",
+            "text-lg font-bold text-gray-900 transition-all duration-300 ease-in-out whitespace-nowrap pointer-events-none",
+            collapsed ? "max-w-0 opacity-0 overflow-hidden" : "max-w-xs opacity-100",
           )}>
             UniPastQ
           </span>
@@ -119,8 +119,9 @@ export function Sidebar({
 
       <div className={cn("py-3", collapsed ? "px-0" : "px-3")}>
         <div className={cn(
-          "flex flex-col items-center",
-          collapsed ? "gap-3" : "space-y-1",
+          "flex flex-col",
+          collapsed ? "items-start px-3" : "items-stretch px-3",
+          "space-y-1",
         )}>
           {mainNav.map((item) => (
             <Tooltip key={item.href}>
@@ -134,7 +135,7 @@ export function Sidebar({
                 )}
                 className={cn(
                   "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-300 ease-in-out",
-                  collapsed ? "h-11 w-11 justify-center p-0" : "px-3 py-2.5",
+                  collapsed ? "h-11 w-11 justify-start px-3" : "px-3 py-2.5",
                   isNavActive(item.href)
                     ? collapsed
                       ? "bg-[#7A1030] text-white shadow-[0_12px_24px_rgba(122,16,48,0.18)]"
@@ -148,8 +149,8 @@ export function Sidebar({
                   {item.icon}
                 </span>
                 <span className={cn(
-                  "transition-all duration-300 ease-in-out",
-                  collapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100",
+                  "transition-all duration-300 ease-in-out whitespace-nowrap pointer-events-none",
+                  collapsed ? "max-w-0 opacity-0 overflow-hidden" : "max-w-xs opacity-100",
                 )}>
                   {item.label}
                 </span>
@@ -199,7 +200,7 @@ export function Sidebar({
 
           <div className="px-4 py-3">
             <p className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-              {departmentName}
+              {programmeName}
             </p>
             <div className="mt-2 space-y-1">
               {groupedByLevel.map(({ level, courses }) => (

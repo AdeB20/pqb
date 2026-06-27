@@ -30,7 +30,7 @@ export default async function DashboardPage({
 
   if (!profile) redirect("/login");
 
-  const dept = profile.department;
+  const prog = profile.department;
 
   const { data: rawCourses } = await supabase
     .from("courses")
@@ -85,21 +85,21 @@ export default async function DashboardPage({
   });
 
   const generalCourses = courses?.filter((c) => c.scope === "general").map(withCount) || [];
-  const deptCourses = courses?.filter((c) => c.scope !== "general").map(withCount) || [];
-  const levels = dept?.available_levels || [];
+  const programmeCourses = courses?.filter((c) => c.scope !== "general").map(withCount) || [];
+  const levels = prog?.available_levels || [];
 
   const selectedLevel = searchParams.level
     ? parseInt(searchParams.level)
     : profile.current_level;
 
-  const filteredCourses = deptCourses.filter((c) => c.level === selectedLevel);
+  const filteredCourses = programmeCourses.filter((c) => c.level === selectedLevel);
 
   return (
     <div className="space-y-8">
       <div className="animate-fade-in-down flex flex-col gap-4 rounded-[1.75rem] border border-white/70 bg-white/70 p-5 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-primary">Dashboard</h2>
-          <p className="mt-1 text-sm text-gray-500">{dept?.name}</p>
+          <p className="mt-1 text-sm text-gray-500">{prog?.name}</p>
         </div>
         <Link
           href="/upload"

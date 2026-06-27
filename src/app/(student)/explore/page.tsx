@@ -3,20 +3,20 @@
 import { useEffect, useState } from "react";
 
 interface Faculty { id: string; name: string }
-interface Department { id: string; name: string }
+interface Programme { id: string; name: string }
 interface Course { id: string; code: string; title: string; level: number }
 
 export default function ExplorePage() {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
 
   const [selectedFaculty, setSelectedFaculty] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedProgramme, setSelectedProgramme] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
 
   const [loadingFaculties, setLoadingFaculties] = useState(true);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [loadingProgrammes, setLoadingProgrammes] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [error, setError] = useState("");
 
@@ -30,35 +30,35 @@ export default function ExplorePage() {
 
   useEffect(() => {
     if (!selectedFaculty) {
-      setDepartments([]);
-      setSelectedDepartment("");
+      setProgrammes([]);
+      setSelectedProgramme("");
       return;
     }
-    setLoadingDepartments(true);
-    setSelectedDepartment("");
+    setLoadingProgrammes(true);
+    setSelectedProgramme("");
     setCourses([]);
     setSelectedCourse("");
-    fetch(`/api/browse/departments?faculty_id=${selectedFaculty}`)
+    fetch(`/api/browse/programmes?faculty_id=${selectedFaculty}`)
       .then((r) => r.json())
-      .then((d) => setDepartments(d.departments ?? []))
-      .catch(() => setError("Failed to load departments"))
-      .finally(() => setLoadingDepartments(false));
+      .then((d) => setProgrammes(d.programmes ?? []))
+      .catch(() => setError("Failed to load programmes"))
+      .finally(() => setLoadingProgrammes(false));
   }, [selectedFaculty]);
 
   useEffect(() => {
-    if (!selectedDepartment) {
+    if (!selectedProgramme) {
       setCourses([]);
       setSelectedCourse("");
       return;
     }
     setLoadingCourses(true);
     setSelectedCourse("");
-    fetch(`/api/browse/courses?department_id=${selectedDepartment}`)
+    fetch(`/api/browse/courses?department_id=${selectedProgramme}`)
       .then((r) => r.json())
       .then((d) => setCourses(d.courses ?? []))
       .catch(() => setError("Failed to load courses"))
       .finally(() => setLoadingCourses(false));
-  }, [selectedDepartment]);
+  }, [selectedProgramme]);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -98,13 +98,13 @@ export default function ExplorePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700">Programme</label>
           <select
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            disabled={!selectedFaculty || loadingDepartments}
+            value={selectedProgramme}
+            onChange={(e) => setSelectedProgramme(e.target.value)}
+            disabled={!selectedFaculty || loadingProgrammes}
             className="mt-1 block w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="">{loadingDepartments ? "Loading..." : "Select programme"}</option>
-            {departments.map((d) => (
+            <option value="">{loadingProgrammes ? "Loading..." : "Select programme"}</option>
+            {programmes.map((d) => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
@@ -115,7 +115,7 @@ export default function ExplorePage() {
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            disabled={!selectedDepartment || loadingCourses}
+            disabled={!selectedProgramme || loadingCourses}
             className="mt-1 block w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">{loadingCourses ? "Loading..." : "Select course"}</option>

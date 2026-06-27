@@ -67,16 +67,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: deptRow } = await supabase
+    const { data: programmeRow } = await supabase
       .from("departments")
       .select("id")
       .limit(1)
       .single();
 
-    if (!deptRow) {
-      logger.warn({ event: "admin.create.no_department", message: "No departments exist for admin registration", ip });
+    if (!programmeRow) {
+      logger.warn({ event: "admin.create.no_programme", message: "No programmes exist for admin registration", ip });
       return NextResponse.json(
-        { error: "No departments exist yet. Seed a department first via /settings" },
+        { error: "No programmes exist yet. Seed a programme first via /settings" },
         { status: 400 },
       );
     }
@@ -100,12 +100,12 @@ export async function POST(req: Request) {
     const adminUser = authUser?.users.find((u) => u.email === email);
 
     if (adminUser) {
-      const deptId = (deptRow as unknown as { id: string }).id;
+      const programmeId = (programmeRow as unknown as { id: string }).id;
       await supabase.from("profiles").insert({
         auth_user_id: adminUser.id,
         full_name: fullName,
         matric_number: "ADMIN0001",
-        department_id: deptId,
+        department_id: programmeId,
         current_level: 100,
         role: "super_admin",
       } as never);

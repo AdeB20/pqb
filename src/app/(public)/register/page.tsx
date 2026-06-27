@@ -10,7 +10,7 @@ export default function RegisterPage() {
     <AuthShell
       page="register"
       headline="Join thousands of students studying smarter."
-      subtext="Create your UniPastQ account to access your department's questions, upload resources, and study with your peers."
+      subtext="Create your UniPastQ account to access your programme's questions, upload resources, and study with your peers."
     >
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-gray-500">

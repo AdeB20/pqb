@@ -124,6 +124,60 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ questions: raw ?? [] });
       }
 
+      case "list-all-questions": {
+        const status = req.nextUrl.searchParams.get("status");
+        const programmeId = req.nextUrl.searchParams.get("programme_id");
+        const level = req.nextUrl.searchParams.get("level");
+        const search = req.nextUrl.searchParams.get("search");
+        const page = parseInt(req.nextUrl.searchParams.get("page") || "1");
+        const pageSize = 20;
+        const offset = (page - 1) * pageSize;
+
+        let query = service
+          .from("past_questions")
+          .select(`
+            id, course_id, year, semester, exam_type, file_url, file_type, status, flag_count, created_at,
+            courses!inner(code, title, level, department_id, departments(name)),
+            profiles!inner(full_name)
+          `, { count: "exact" });
+
+        if (status && status !== "all") {
+          query = query.eq("status", status);
+        }
+        if (programmeId) {
+          query = query.eq("courses.department_id", programmeId);
+        }
+        if (level) {
+          query = query.eq("courses.level", parseInt(level));
+        }
+        if (search) {
+          query = query.or(`courses.code.ilike.%${search}%,courses.title.ilike.%${search}%`);
+        }
+
+        const { data: rawQuestions, count, error } = await query
+          .order("created_at", { ascending: false })
+          .range(offset, offset + pageSize - 1);
+
+        if (error) {
+          logger.error({ event: "admin.list_all_questions_error", message: "Failed to list questions", error: error.message });
+          return NextResponse.json({ error: "Failed to load questions" }, { status: 500 });
+        }
+
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+        const questionsWithUrls = (rawQuestions ?? []).map((q: Record<string, unknown>) => ({
+          ...q,
+          file_url: q.file_url ? `${supabaseUrl}/storage/v1/object/public/approved/${q.file_url}` : null,
+        }));
+
+        return NextResponse.json({
+          questions: questionsWithUrls,
+          total: count ?? 0,
+          page,
+          pageSize,
+          totalPages: Math.ceil((count ?? 0) / pageSize),
+        });
+      }
+
       case "students": {
         const { data: raw } = await service
           .from("profiles")
@@ -138,10 +192,15 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ faculties: list ?? [] });
       }
 
-      case "departments": {
-        const rawData = await service.from("departments").select("name, faculties!inner(name)").order("name") as never;
-        const list = rawData as unknown as { data: { name: string; faculties: { name: string } }[] | null };
-        return NextResponse.json({ departments: (list.data ?? []).map((d) => ({ name: d.name, faculty_name: d.faculties?.name || "" })) });
+      case "programmes": {
+        const { data: list } = await service
+          .from("departments")
+          .select("id, name, faculties!inner(name)")
+          .order("name") as never;
+        const programmes = (list as unknown as { id: string; name: string; faculties: { name: string } }[] | null) ?? [];
+        return NextResponse.json({
+          programmes: programmes.map((d) => ({ id: d.id, name: d.name, faculty_name: d.faculties?.name || "" })),
+        });
       }
 
       case "list-admins": {
@@ -186,7 +245,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const { user, service } = session;
-    const action = req.nextUrl.searchParams.get("action");
+
+    let action = req.nextUrl.searchParams.get("action");
+    let jsonBody: Record<string, unknown> | null = null;
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      jsonBody = await req.json();
+      if (!action && jsonBody?.action) {
+        action = jsonBody.action as string;
+      }
+    }
 
     let formData: FormData;
     try {
@@ -208,7 +277,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      case "seed-department": {
+      case "seed-programme": {
         const name = formData.get("name") as string;
         const faculty_id = formData.get("faculty_id") as string;
         if (!name || !faculty_id) {
@@ -222,7 +291,7 @@ export async function POST(req: NextRequest) {
           .from("departments")
           .insert({ name, slug, faculty_id } as never);
         if (error) throw error;
-        logger.info({ event: "admin.seed_department", message: "Department seeded", userId: user.id, metadata: { name, faculty_id } });
+        logger.info({ event: "admin.seed_programme", message: "Programme seeded", userId: user.id, metadata: { name, faculty_id } });
         return NextResponse.json({ success: true });
       }
 
@@ -270,6 +339,20 @@ export async function POST(req: NextRequest) {
           .eq("id", id);
         if (error) throw error;
         logger.info({ event: "admin.restore_question", message: "Question restored", userId: user.id, metadata: { questionId: id } });
+        return NextResponse.json({ success: true });
+      }
+
+      case "suspend-question": {
+        const id = formData.get("id") as string;
+        if (!id) {
+          return NextResponse.json({ error: "ID required" }, { status: 400 });
+        }
+        const { error } = await service
+          .from("past_questions")
+          .update({ status: "suspended" } as never)
+          .eq("id", id);
+        if (error) throw error;
+        logger.info({ event: "admin.suspend_question", message: "Question suspended", userId: user.id, metadata: { questionId: id } });
         return NextResponse.json({ success: true });
       }
 
@@ -349,12 +432,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      case "list-departments": {
-        const { data: deptList } = await service
+      case "list-programmes": {
+        const { data: programmeList } = await service
           .from("departments")
           .select("id, name")
           .order("name");
-        return NextResponse.json({ departments: deptList ?? [] });
+        return NextResponse.json({ programmes: programmeList ?? [] });
       }
 
       case "invite-admin": {
@@ -376,14 +459,14 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: createErr?.message || "Failed to create account" }, { status: 500 });
         }
 
-        const { data: deptRow } = await service.from("departments").select("id").limit(1).maybeSingle();
-        const deptId = deptRow ? (deptRow as unknown as { id: string }).id : null;
+        const { data: programmeRow } = await service.from("departments").select("id").limit(1).maybeSingle();
+        const programmeId = programmeRow ? (programmeRow as unknown as { id: string }).id : null;
 
         await service.from("profiles").insert({
           auth_user_id: createdUser.user.id,
           full_name: inviteName,
           matric_number: `ADMIN${String(Math.floor(Math.random() * 9000) + 1000)}`,
-          department_id: deptId || "",
+          department_id: programmeId || "",
           current_level: 100,
           role: "super_admin",
         } as never);
@@ -425,6 +508,41 @@ ${recoveryLink ? `<p>Click the link below to set up your password:</p>
         return NextResponse.json({ success: true });
       }
 
+      case "create-course": {
+        let body: { code?: string; title?: string; programme_id?: string; level?: number };
+        try {
+          body = await req.json();
+        } catch {
+          return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+        }
+        const { code, title, programme_id, level } = body;
+        if (!code || !title || !programme_id || !level) {
+          return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+        }
+        const { data: existing } = await service
+          .from("courses")
+          .select("id")
+          .ilike("code", code)
+          .maybeSingle();
+        if (existing) {
+          return NextResponse.json({ error: "Course code already exists" }, { status: 409 });
+        }
+        const { data: newCourse, error } = await service
+          .from("courses")
+          .insert({
+            code: code.toUpperCase(),
+            title,
+            level,
+            department_id: programme_id,
+            scope: "departmental",
+          } as never)
+          .select("id, code, title, level")
+          .single();
+        if (error) throw error;
+        logger.info({ event: "admin.create_course", message: "Course created", userId: user.id, metadata: { code, title } });
+        return NextResponse.json({ course: newCourse });
+      }
+
       case "admin-upload": {
         const course_id = formData.get("course_id") as string;
         const year = parseInt(formData.get("year") as string);
@@ -462,6 +580,81 @@ ${recoveryLink ? `<p>Click the link below to set up your password:</p>
         }
         logger.info({ event: "admin.upload", message: "Admin uploaded question", userId: user.id, metadata: { course_id, file_url } });
         return NextResponse.json({ success: true });
+      }
+
+      case "bulk-import-faculties": {
+        const faculties = (jsonBody?.faculties as string[]) || [];
+        const results = { created: 0, skipped: 0, errors: [] as { row: number; message: string }[] };
+        for (let i = 0; i < faculties.length; i++) {
+          const name = faculties[i]?.trim();
+          if (!name) {
+            results.errors.push({ row: i + 1, message: "Empty faculty name" });
+            continue;
+          }
+          const { data: existing } = await service
+            .from("faculties")
+            .select("id")
+            .ilike("name", name)
+            .maybeSingle();
+          if (existing) {
+            results.skipped++;
+            continue;
+          }
+          const slug = name.toLowerCase().replace(/\s+/g, "-");
+          const { error: insertErr } = await service.from("faculties").insert({ name, slug } as never);
+          if (insertErr) {
+            results.errors.push({ row: i + 1, message: insertErr.message });
+          } else {
+            results.created++;
+          }
+        }
+        logger.info({ event: "admin.bulk_import_faculties", message: "Bulk import faculties completed", userId: user.id, metadata: results });
+        return NextResponse.json({ success: true, results });
+      }
+
+      case "bulk-import-programmes": {
+        const programmes = (jsonBody?.programmes as Array<{ faculty: string; programme: string }>) || [];
+        const results2 = { created: 0, skipped: 0, errors: [] as { row: number; message: string }[] };
+        for (let i = 0; i < programmes.length; i++) {
+          const row = programmes[i];
+          const facultyName = row?.faculty?.trim();
+          const programmeName = row?.programme?.trim();
+          if (!facultyName || !programmeName) {
+            results2.errors.push({ row: i + 1, message: "Missing faculty or programme name" });
+            continue;
+          }
+          const { data: facultyRow } = await service
+            .from("faculties")
+            .select("id")
+            .ilike("name", facultyName)
+            .maybeSingle();
+          if (!facultyRow) {
+            results2.errors.push({ row: i + 1, message: `Faculty "${facultyName}" not found` });
+            continue;
+          }
+          const facultyId = (facultyRow as unknown as { id: string }).id;
+          const { data: existingProgramme } = await service
+            .from("departments")
+            .select("id")
+            .ilike("name", programmeName)
+            .eq("faculty_id", facultyId)
+            .maybeSingle();
+          if (existingProgramme) {
+            results2.skipped++;
+            continue;
+          }
+          const slug = programmeName.toLowerCase().replace(/\s+/g, "-");
+          const { error: insertErr } = await service
+            .from("departments")
+            .insert({ name: programmeName, slug, faculty_id: facultyId } as never);
+          if (insertErr) {
+            results2.errors.push({ row: i + 1, message: insertErr.message });
+          } else {
+            results2.created++;
+          }
+        }
+        logger.info({ event: "admin.bulk_import_programmes", message: "Bulk import programmes completed", userId: user.id, metadata: results2 });
+        return NextResponse.json({ success: true, results: results2 });
       }
 
       default:
