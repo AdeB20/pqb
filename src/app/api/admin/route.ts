@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       case "stats": {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const [{ count: total }, { count: published }, { count: suspended }, { count: students }, { count: pending }, { count: todayUploads }, { count: totalFlags }] = await Promise.all([
+        const [{ count: total }, { count: published }, { count: suspended }, { count: students }, { count: pending }, { count: todayUploads }, { count: totalFlags }, { count: totalSolutions }] = await Promise.all([
           service.from("past_questions").select("*", { count: "exact", head: true }),
           service.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "published"),
           service.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "suspended"),
@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
           service.from("past_questions").select("*", { count: "exact", head: true }).eq("status", "pending_review"),
           service.from("past_questions").select("*", { count: "exact", head: true }).gte("created_at", today.toISOString()),
           service.from("flags").select("*", { count: "exact", head: true }),
+          service.from("solutions").select("*", { count: "exact", head: true }),
         ]);
         const flagRate = total && total > 0 ? ((totalFlags ?? 0) / total) * 100 : 0;
 
@@ -102,7 +103,7 @@ export async function GET(req: NextRequest) {
         }
 
         return NextResponse.json({
-          stats: { totalQuestions: total ?? 0, publishedQuestions: published ?? 0, suspendedQuestions: suspended ?? 0, totalStudents: students ?? 0, pendingReview: pending ?? 0, uploadsToday: todayUploads ?? 0, flagRate },
+          stats: { totalQuestions: total ?? 0, publishedQuestions: published ?? 0, suspendedQuestions: suspended ?? 0, totalStudents: students ?? 0, pendingReview: pending ?? 0, uploadsToday: todayUploads ?? 0, totalSolutions: totalSolutions ?? 0, flagRate },
           topCourses,
           topStudents,
           flaggedCourses,
@@ -137,7 +138,7 @@ export async function GET(req: NextRequest) {
           .from("past_questions")
           .select(`
             id, course_id, year, semester, exam_type, file_url, file_type, status, flag_count, created_at,
-            courses!inner(code, title, level, department_id, departments(name)),
+            courses!inner(code, title, level, department_id),
             profiles!inner(full_name)
           `, { count: "exact" });
 
@@ -169,8 +170,23 @@ export async function GET(req: NextRequest) {
           file_url: q.file_url ? `${supabaseUrl}/storage/v1/object/public/approved/${q.file_url}` : null,
         }));
 
+        const deptIds = [...new Set((questionsWithUrls as Array<{ courses?: { department_id: string } }>).map((q) => q.courses?.department_id).filter(Boolean))] as string[];
+        const { data: deptRows } = await service
+          .from("departments")
+          .select("id, name")
+          .in("id", deptIds.length > 0 ? deptIds : ["none"]);
+        const deptMap = new Map((deptRows ?? []).map((d: { id: string; name: string }) => [d.id, d.name]));
+
+        const questionsWithProgramme = (questionsWithUrls as Array<Record<string, unknown>>).map((q) => {
+          const course = q.courses as Record<string, unknown> | undefined;
+          return {
+            ...q,
+            courses: course ? { ...course, departments: { name: deptMap.get(course.department_id as string) || "" } } : null,
+          };
+        });
+
         return NextResponse.json({
-          questions: questionsWithUrls,
+          questions: questionsWithProgramme,
           total: count ?? 0,
           page,
           pageSize,
@@ -201,6 +217,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
           programmes: programmes.map((d) => ({ id: d.id, name: d.name, faculty_name: d.faculties?.name || "" })),
         });
+      }
+
+      case "list-programmes": {
+        const { data: programmeList } = await service
+          .from("departments")
+          .select("id, name")
+          .order("name");
+        return NextResponse.json({ programmes: programmeList ?? [] });
       }
 
       case "list-admins": {

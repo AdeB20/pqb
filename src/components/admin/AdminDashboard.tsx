@@ -33,6 +33,11 @@ const statIcons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
     </svg>
   ),
+  "Uploaded Solutions": (
+    <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
   "Flag Rate": (
     <svg className="h-5 w-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" />
@@ -48,6 +53,7 @@ export function AdminDashboard({ secret: _secret }: { secret: string }) {
     totalStudents: 0,
     pendingReview: 0,
     uploadsToday: 0,
+    totalSolutions: 0,
     flagRate: 0,
   });
 
@@ -78,6 +84,7 @@ export function AdminDashboard({ secret: _secret }: { secret: string }) {
     { label: "Suspended", value: stats.suspendedQuestions, key: "Suspended" },
     { label: "Students", value: stats.totalStudents, key: "Students" },
     { label: "Uploads Today", value: stats.uploadsToday, key: "Uploads Today" },
+    { label: "Uploaded Solutions", value: stats.totalSolutions, key: "Uploaded Solutions" },
     { label: "Flag Rate", value: `${stats.flagRate.toFixed(1)}%`, key: "Flag Rate" },
   ];
 
