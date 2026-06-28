@@ -114,7 +114,7 @@ export function Sidebar({
       )}>
         <Link href="/" className="flex items-center gap-2 min-w-0" onClick={onClose}>
           {collapsed ? (
-            <Image src="/logo.png" alt="EQB logo" width={24} height={24} className="h-6 w-6 object-contain" />
+            <Image src="/icon.png" alt="EQB logo" width={24} height={24} className="h-6 w-6 object-contain" />
           ) : (
             <Image src="/logo.png" alt="EQB logo" width={120} height={40} className="h-10 w-auto object-contain" priority />
           )}

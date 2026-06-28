@@ -35,7 +35,7 @@ export function AuthShell({ headline, subtext, children, page }: AuthShellProps)
           <div className="relative flex h-full flex-col justify-between px-10 py-10">
             <Link href="/" className="inline-flex items-center gap-3 self-start">
               <Image
-                src="/logo.png"
+                src="/drklogo.png"
                 alt="EQB logo"
                 width={160}
                 height={48}

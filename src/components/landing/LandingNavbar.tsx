@@ -35,9 +35,9 @@ export function LandingNavbar() {
           <Image
             src="/logo.png"
             alt="EQB logo"
-           width={160}
-height={48}
-className="h-12 w-auto object-contain"
+            width={160}
+            height={48}
+            className="h-12 w-auto object-contain"
             priority
           />
         </Link>

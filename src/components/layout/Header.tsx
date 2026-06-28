@@ -77,7 +77,7 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed, userNam
       )}
 
       <Link href="/dashboard" className="flex items-center">
-        <Image src="/logo.png" alt="EQB logo" width={120} height={40} className="h-10 w-auto object-contain" priority />
+        <Image src="/drklogo.png" alt="EQB logo" width={120} height={40} className="h-10 w-auto object-contain" priority />
       </Link>
 
       <div className="hidden flex-1 lg:block">

@@ -407,7 +407,7 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr_1fr] lg:px-8">
           <div>
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="EQB logo" width={160} height={48} className="h-12 w-auto object-contain" priority />
+              <Image src="/drklogo.png" alt="EQB logo" width={160} height={48} className="h-12 w-auto object-contain" priority />
               <p className="text-sm text-white/70">The student-built past questions archive.</p>
             </div>
           </div>

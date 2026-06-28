@@ -101,7 +101,7 @@ export function AdminSidebar({
         collapsed ? "justify-center px-3" : "px-6 gap-3",
       )}>
         {collapsed ? (
-          <Image src="/logo.png" alt="EQB logo" width={24} height={24} className="h-6 w-6 object-contain" />
+          <Image src="/icon.png" alt="EQB logo" width={24} height={24} className="h-6 w-6 object-contain" />
         ) : (
           <>
             <Image src="/logo.png" alt="EQB logo" width={100} height={32} className="h-8 w-auto object-contain" priority />
