@@ -26,8 +26,8 @@ const bullets = [
 
 export function AuthShell({ headline, subtext, children, page }: AuthShellProps) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="grid min-h-screen lg:grid-cols-[45%_55%]">
+    <div className="min-h-screen bg-background text-foreground lg:h-screen lg:overflow-hidden">
+      <div className="grid min-h-full lg:h-full lg:grid-cols-[45%_55%]">
         <aside className="relative hidden overflow-hidden bg-primary text-white lg:flex lg:flex-col">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(212,117,10,0.14),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.04),transparent_55%)]" />
           <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:22px_22px]" />
@@ -83,7 +83,7 @@ export function AuthShell({ headline, subtext, children, page }: AuthShellProps)
           </div>
         </aside>
 
-        <section className="relative flex items-center justify-center overflow-hidden px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+        <section className="relative px-4 py-8 sm:px-6 lg:overflow-y-auto lg:px-10 lg:py-10">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(122,16,48,0.08),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(212,117,10,0.09),transparent_32%)]" />
 
           <div className="mx-auto w-full max-w-xl">
