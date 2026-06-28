@@ -13,7 +13,7 @@ type LogEvent = {
   metadata?: Record<string, unknown>;
 };
 
-const PREFIX = "[UniPastQ]";
+const PREFIX = "[EQB]";
 
 function write(level: LogLevel, e: LogEvent) {
   const entry = {

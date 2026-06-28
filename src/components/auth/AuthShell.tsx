@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Sparkles, BookOpen, Upload, ShieldCheck } from "lucide-react";
+import Image from "next/image";
+import { BookOpen, Upload, ShieldCheck } from "lucide-react";
 
 type AuthShellProps = {
   headline: string;
@@ -33,10 +34,14 @@ export function AuthShell({ headline, subtext, children, page }: AuthShellProps)
 
           <div className="relative flex h-full flex-col justify-between px-10 py-10">
             <Link href="/" className="inline-flex items-center gap-3 self-start">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white shadow-[0_12px_24px_rgba(0,0,0,0.12)]">
-                <Sparkles className="h-5 w-5" />
-              </span>
-              <span className="text-xl font-bold tracking-tight text-white">UniPastQ</span>
+              <Image
+                src="/logo.png"
+                alt="EQB logo"
+                width={160}
+                height={48}
+                className="h-12 w-auto object-contain"
+                priority
+              />
             </Link>
 
             <div className="max-w-xl">
@@ -83,23 +88,16 @@ export function AuthShell({ headline, subtext, children, page }: AuthShellProps)
 
           <div className="mx-auto w-full max-w-xl">
             <div className="mb-5 flex items-center gap-3 lg:hidden">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white">
-                <Sparkles className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-lg font-bold text-primary">UniPastQ</p>
-                <p className="text-xs text-gray-500">Built by students, for students.</p>
-              </div>
+              <Image src="/logo.png" alt="EQB logo" width={120} height={36} className="h-9 w-auto object-contain" />
+              <p className="text-xs text-gray-500">Built by students, for students.</p>
             </div>
 
             <div className="rounded-[2rem] bg-white/90 px-5 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_14px_28px_rgba(122,16,48,0.18)]">
-                <BookOpen className="h-6 w-6" />
-              </div>
+              <Image src="/logo.png" alt="EQB logo" width={80} height={80} className="mx-auto h-16 w-auto object-contain" />
               <div className="mt-6">{children}</div>
             </div>
 
-            <p className="mt-4 text-center text-xs text-gray-500">© 2025 UniPastQ</p>
+            <p className="mt-4 text-center text-xs text-gray-500">© 2025 EQB</p>
           </div>
         </section>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SearchBar } from "@/components/browse/SearchBar";
@@ -75,11 +76,8 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed, userNam
         </button>
       )}
 
-      <Link href="/dashboard" className="flex items-center gap-2 text-sm font-bold text-primary-foreground lg:text-base">
-        <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/15 text-xs font-semibold tracking-wide text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-          U
-        </span>
-        <span>UniPastQ</span>
+      <Link href="/dashboard" className="flex items-center">
+        <Image src="/logo.png" alt="EQB logo" width={120} height={40} className="h-10 w-auto object-contain" priority />
       </Link>
 
       <div className="hidden flex-1 lg:block">

@@ -24,7 +24,7 @@ export default async function FeedbackPage() {
       <div className="rounded-[1.75rem] border border-white/70 bg-white/70 p-5 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl">
         <h2 className="text-xl font-semibold text-primary">Feedback</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Share anything that would make UniPastQ better. Your message goes to the admin team and your admin contacts stay private.
+          Share anything that would make EQB better. Your message goes to the admin team and your admin contacts stay private.
         </p>
       </div>
 

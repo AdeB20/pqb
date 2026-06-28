@@ -46,7 +46,7 @@ function cleanupRateLimitStore(now = Date.now()) {
 
   if (activeCount > 100) {
     console.log(
-      `[UniPastQ] ${JSON.stringify({ t: new Date(now).toISOString(), lvl: "warn", ev: "ratelimit.high_utilization", msg: "Rate limit store has high number of active entries", count: activeCount })}`,
+      `[EQB] ${JSON.stringify({ t: new Date(now).toISOString(), lvl: "warn", ev: "ratelimit.high_utilization", msg: "Rate limit store has high number of active entries", count: activeCount })}`,
     );
   }
 }

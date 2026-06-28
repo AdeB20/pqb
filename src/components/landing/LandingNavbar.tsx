@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -29,14 +30,16 @@ export function LandingNavbar() {
           : "bg-white/55 backdrop-blur-md",
       )}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="#home" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-white shadow-[0_14px_28px_rgba(122,16,48,0.2)]">
-            U
-          </span>
-          <span className="text-lg font-bold tracking-tight text-primary">
-            UniPastQ
-          </span>
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 py-3 lg:px-8">
+        <Link href="#home" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="EQB logo"
+           width={160}
+height={48}
+className="h-12 w-auto object-contain"
+            priority
+          />
         </Link>
 
         <nav className="hidden items-center gap-2 md:flex">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -112,17 +113,11 @@ export function Sidebar({
         collapsed ? "justify-start px-3" : "justify-between px-4",
       )}>
         <Link href="/" className="flex items-center gap-2 min-w-0" onClick={onClose}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_12px_24px_rgba(122,16,48,0.2)]">
-            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.098L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.098L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.098L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.098z" />
-            </svg>
-          </div>
-          <span className={cn(
-            "text-lg font-bold text-gray-900 transition-all duration-300 ease-in-out whitespace-nowrap pointer-events-none",
-            collapsed ? "max-w-0 opacity-0 overflow-hidden" : "max-w-xs opacity-100",
-          )}>
-            UniPastQ
-          </span>
+          {collapsed ? (
+            <Image src="/logo.png" alt="EQB logo" width={24} height={24} className="h-6 w-6 object-contain" />
+          ) : (
+            <Image src="/logo.png" alt="EQB logo" width={120} height={40} className="h-10 w-auto object-contain" priority />
+          )}
         </Link>
       </div>
 

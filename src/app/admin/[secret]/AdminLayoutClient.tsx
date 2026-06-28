@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminMobileSidebar } from "@/components/admin/AdminMobileSidebar";
 import { createClient } from "@/lib/supabase/client";
@@ -87,7 +88,7 @@ export function AdminLayoutClient({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
-            <span className="text-sm font-semibold text-gray-900">Admin Panel</span>
+            <Image src="/logo.png" alt="EQB logo" width={80} height={24} className="h-6 w-auto object-contain" />
           </div>
 
           {/* Right side: notifications + admin profile */}
@@ -101,12 +102,12 @@ export function AdminLayoutClient({
 
             {/* Admin profile */}
             <div className="flex items-center gap-2 cursor-pointer">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white shrink-0">
-                {adminName.charAt(0).toUpperCase()}
+              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_10px_20px_rgba(122,16,48,0.18)] shrink-0">
+                <Image src="/logo.png" alt="EQB logo" width={20} height={20} className="h-5 w-5 object-contain" />
               </div>
               <div className="hidden sm:block">
                 <p className="text-sm font-medium text-gray-900 leading-tight">{adminName}</p>
-                <p className="text-xs text-gray-500 leading-tight">Super Admin</p>
+                <p className="text-xs text-gray-500 leading-tight">EQB Super Admin</p>
               </div>
             </div>
           </div>

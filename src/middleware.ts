@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
       console.log(
-        `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.unauthorized", msg: "Redirected unauthenticated user to login", ip, p: pathname })}`,
+        `[EQB] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.unauthorized", msg: "Redirected unauthenticated user to login", ip, p: pathname })}`,
       );
       return NextResponse.redirect(new URL("/login", request.url));
     }
@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
 
       if (profile?.is_locked) {
         console.log(
-          `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "info", ev: "auth.locked", msg: "Redirected locked user to upload", uid: user.id, p: pathname })}`,
+          `[EQB] ${JSON.stringify({ t: new Date().toISOString(), lvl: "info", ev: "auth.locked", msg: "Redirected locked user to upload", uid: user.id, p: pathname })}`,
         );
         return NextResponse.redirect(new URL("/upload?locked=true", request.url));
       }
@@ -90,7 +90,7 @@ export async function middleware(request: NextRequest) {
         ? `/admin/${adminSecret}/login`
         : "/login";
       console.log(
-        `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.admin_unauthorized", msg: "Redirected unauthenticated user from admin route", ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown", p: pathname })}`,
+        `[EQB] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.admin_unauthorized", msg: "Redirected unauthenticated user from admin route", ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown", p: pathname })}`,
       );
       return NextResponse.redirect(new URL(loginUrl, request.url));
     }
@@ -103,7 +103,7 @@ export async function middleware(request: NextRequest) {
 
     if (profile?.role !== "super_admin") {
       console.log(
-        `[UniPastQ] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.admin_forbidden", msg: "Non-admin user attempted admin route", uid: user.id, p: pathname })}`,
+        `[EQB] ${JSON.stringify({ t: new Date().toISOString(), lvl: "warn", ev: "auth.admin_forbidden", msg: "Non-admin user attempted admin route", uid: user.id, p: pathname })}`,
       );
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }

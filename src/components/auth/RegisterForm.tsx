@@ -203,7 +203,7 @@ export function RegisterForm() {
               control={control}
               name="departmentId"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} disabled={!selectedFaculty}>
+                <Select value={field.value} onValueChange={field.onChange} disabled={!selectedFaculty} key={selectedFaculty || "none"}>
                   <SelectTrigger className="h-12 w-full rounded-xl px-4 focus-visible:ring-[#7A1030]">
                     <SelectValue placeholder="Select programme" />
                   </SelectTrigger>

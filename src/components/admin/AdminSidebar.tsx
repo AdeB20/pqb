@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -99,11 +100,13 @@ export function AdminSidebar({
         "flex items-center border-b border-white/60 py-5",
         collapsed ? "justify-center px-3" : "px-6 gap-3",
       )}>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-[0_12px_24px_rgba(122,16,48,0.2)]">
-          A
-        </div>
-        {!collapsed && (
-          <p className="text-sm font-semibold text-primary">Admin Panel</p>
+        {collapsed ? (
+          <Image src="/logo.png" alt="EQB logo" width={24} height={24} className="h-6 w-6 object-contain" />
+        ) : (
+          <>
+            <Image src="/logo.png" alt="EQB logo" width={100} height={32} className="h-8 w-auto object-contain" priority />
+            <p className="text-sm font-semibold text-primary">Admin</p>
+          </>
         )}
       </div>
 

@@ -27,8 +27,31 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "University Past Questions Platform",
-  description: "Browse, download, and upload past examination questions.",
+  title: {
+    default: "EQB - Electronic Question Bank",
+    template: "%s | EQB",
+  },
+  description: "EQB is the Electronic Question Bank for browsing, downloading, and uploading past examination questions.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "EQB - Electronic Question Bank",
+    description: "Browse, download, and upload past examination questions on EQB.",
+    images: ["/og-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EQB - Electronic Question Bank",
+    description: "Browse, download, and upload past examination questions on EQB.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({

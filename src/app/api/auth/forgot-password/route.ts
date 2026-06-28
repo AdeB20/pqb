@@ -81,11 +81,11 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "UniPastQ <noreply@devalyze.space>",
+        from: "EQB <noreply@devalyze.space>",
         to: email,
-        subject: role === "super_admin" ? "Reset your UniPastQ admin password" : "Reset your UniPastQ password",
+        subject: role === "super_admin" ? "Reset your EQB admin password" : "Reset your EQB password",
         html: `<h2>Password Reset</h2>
-<p>You requested a password reset for your <strong>UniPastQ</strong> ${role === "super_admin" ? "admin" : "student"} account.</p>
+<p>You requested a password reset for your <strong>EQB</strong> ${role === "super_admin" ? "admin" : "student"} account.</p>
 <p>Click the link below to reset your password:</p>
 <p style="text-align:center;padding:16px">
   <a href="${recoveryLink}" style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Reset your password</a>

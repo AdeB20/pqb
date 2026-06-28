@@ -97,10 +97,10 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "UniPastQ <noreply@devalyze.space>",
+          from: "EQB <noreply@devalyze.space>",
           to,
           bcc,
-          subject: "New UniPastQ student feedback",
+          subject: "New EQB student feedback",
           html: `<h2>New feedback received</h2>
 <p><strong>Student:</strong> ${escapeHtml(profile.full_name)}</p>
 <p><strong>Programme:</strong> ${escapeHtml(profile.department?.name || "Unknown")}</p>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -100,7 +101,7 @@ const faqs = [
   {
     question: "How do I reset my password?",
     answer:
-      "Use the Forgot password link on the login page. We’ll send a reset link to your university email.",
+      "Use the Forgot password link on the login page. We'll send a reset link to your university email.",
   },
   {
     question: "Will students know who the admins are?",
@@ -317,7 +318,7 @@ export default function LandingPage() {
               Questions students usually ask
             </h2>
             <p className="mt-4 text-gray-600">
-              A quick guide to the most common questions about using UniPastQ.
+              A quick guide to the most common questions about using EQB.
             </p>
           </div>
 
@@ -388,7 +389,7 @@ export default function LandingPage() {
               Ready to start studying smarter?
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              Join your fellow students already using UniPastQ.
+              Join your fellow students already using EQB.
             </p>
             <div className="mt-8">
               <Link
@@ -406,13 +407,8 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr_1fr] lg:px-8">
           <div>
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white">
-                U
-              </span>
-              <div>
-                <p className="text-lg font-bold">UniPastQ</p>
-                <p className="text-sm text-white/70">The student-built past questions archive.</p>
-              </div>
+              <Image src="/logo.png" alt="EQB logo" width={160} height={48} className="h-12 w-auto object-contain" priority />
+              <p className="text-sm text-white/70">The student-built past questions archive.</p>
             </div>
           </div>
 
@@ -436,7 +432,7 @@ export default function LandingPage() {
         </div>
         <div className="border-t border-white/10 py-4">
           <div className="mx-auto max-w-7xl px-4 text-sm text-white/65 sm:px-6 lg:px-8">
-            (c) 2025 UniPastQ. All rights reserved.
+            (c) 2025 EQB. All rights reserved.
           </div>
         </div>
       </footer>

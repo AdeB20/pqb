@@ -76,11 +76,11 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "UniPastQ <noreply@devalyze.space>",
+        from: "EQB <noreply@devalyze.space>",
         to: email,
-        subject: "Your UniPastQ sign-in code",
+        subject: "Your EQB sign-in code",
         html: `<h2>Your sign-in code</h2>
-<p>Use the code below to sign in to UniPastQ. It expires in 10 minutes.</p>
+<p>Use the code below to sign in to EQB. It expires in 10 minutes.</p>
 <p style="font-size:24px;font-weight:bold;letter-spacing:8px;text-align:center;padding:16px;background:#f3f4f6;border-radius:8px">${code}</p>`,
       }),
     });

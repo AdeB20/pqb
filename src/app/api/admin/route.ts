@@ -516,11 +516,11 @@ export async function POST(req: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "UniPastQ <noreply@devalyze.space>",
+            from: "EQB <noreply@devalyze.space>",
             to: inviteEmail,
-            subject: "You've been invited as an admin on UniPastQ",
+            subject: "You've been invited as an admin on EQB",
             html: `<h2>Admin Invitation</h2>
-<p>You've been invited as an administrator on <strong>UniPastQ</strong>.</p>
+<p>You've been invited as an administrator on <strong>EQB</strong>.</p>
 ${recoveryLink ? `<p>Click the link below to set up your password:</p>
 <p style="text-align:center;padding:16px"><a href="${recoveryLink}" style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Set up your password</a></p>
 <p style="color:#666;font-size:13px">This link expires in 24 hours.</p>` : `<p>Your temporary password is: <code style="font-size:16px;background:#f3f4f6;padding:4px 8px;border-radius:4px">${tempPassword}</code></p>

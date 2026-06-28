@@ -49,7 +49,7 @@ export function FeedbackForm() {
           rows={6}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Share bugs, ideas, missing features, or anything that would make UniPastQ better."
+          placeholder="Share bugs, ideas, missing features, or anything that would make EQB better."
           className="block w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
         />
       </div>
