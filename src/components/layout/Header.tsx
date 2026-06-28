@@ -20,9 +20,10 @@ interface HeaderProps {
   onSidebarToggle?: () => void;
   sidebarCollapsed?: boolean;
   userName?: string;
+  feedbackCount?: number;
 }
 
-export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed, userName }: HeaderProps) {
+export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed, userName, feedbackCount = 0 }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -86,6 +87,18 @@ export function Header({ onMenuClick, onSidebarToggle, sidebarCollapsed, userNam
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <Link
+          href="/feedback"
+          className="relative inline-flex h-9 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-sm font-medium text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-secondary/30"
+        >
+          <span className="hidden sm:inline">Feedback</span>
+          <span className="sm:hidden">Msg</span>
+          {feedbackCount > 0 && (
+            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-white">
+              {feedbackCount > 9 ? "9+" : feedbackCount}
+            </span>
+          )}
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/15 text-sm font-medium text-white outline-none transition-transform hover:-translate-y-0.5 hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-secondary/30">
             {initial}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { StudentLayoutClient } from "./StudentLayoutClient";
 import {
   loadStudentCourseGroups,
+  loadStudentFeedbackCount,
   loadStudentProfile,
   loadUploadObligationDays,
 } from "@/lib/student-data";
@@ -26,6 +27,7 @@ export default async function StudentLayout({
     loadStudentCourseGroups(supabase, profile.department_id),
     loadUploadObligationDays(supabase),
   ]);
+  const feedbackCount = await loadStudentFeedbackCount(supabase, profile.id);
 
   const prog = profile.department;
   const daysRemaining = calculateDaysRemaining(
@@ -43,6 +45,7 @@ export default async function StudentLayout({
         isLocked: profile.is_locked,
         daysRemaining,
       }}
+      feedbackCount={feedbackCount}
       programmeName={prog?.name || ""}
       availableLevels={prog?.available_levels || []}
       generalCourses={courseGroups.generalCourses}

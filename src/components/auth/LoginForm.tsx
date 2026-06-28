@@ -18,6 +18,8 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [shakeKey, setShakeKey] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [mode, setMode] = useState<"login" | "forgot-password" | "reset-sent">("login");
+  const [resetEmail, setResetEmail] = useState("");
 
   const {
     register,
@@ -42,6 +44,84 @@ export function LoginForm() {
 
     window.location.href = "/dashboard";
   };
+
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setResetEmail(resetEmail.trim());
+    if (!resetEmail.trim()) {
+      setError("Enter your university email");
+      return;
+    }
+
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: resetEmail.trim(),
+        role: "student",
+        redirectTo: `${window.location.origin}/login`,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Failed to send reset email");
+      return;
+    }
+
+    setMode("reset-sent");
+  };
+
+  if (mode === "forgot-password" || mode === "reset-sent") {
+    return (
+      <div className="space-y-4">
+        {mode === "forgot-password" ? (
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="w-full">
+              <label htmlFor="resetEmail" className="mb-2 block text-sm font-semibold text-gray-700">
+                University email
+              </label>
+              <input
+                id="resetEmail"
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+                placeholder="you@university.edu.ng"
+                className="block h-12 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-base focus:border-primary-600 focus:ring-2 focus:ring-primary-100"
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-danger-600 animate-fade-in">{error}</p>
+            )}
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              Send reset link
+            </button>
+          </form>
+        ) : (
+          <div className="rounded-2xl border border-success-200 bg-success-50 p-4 text-sm text-success-700">
+            If an account exists for that email, a reset link has been sent.
+          </div>
+        )}
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("login");
+              setError("");
+            }}
+            className="text-sm text-gray-500 hover:text-primary-600 transition-colors"
+          >
+            Back to sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" key={shakeKey}>
@@ -85,12 +165,17 @@ export function LoginForm() {
           <p className="mt-1 text-xs text-danger-600 animate-fade-in">{errors.password.message}</p>
         )}
         <div className="mt-2 text-right">
-          <a
-            href="mailto:help@unipastq.com?subject=UniPastQ%20Password%20Help"
+          <button
+            type="button"
+            onClick={() => {
+              setMode("forgot-password");
+              setResetEmail("");
+              setError("");
+            }}
             className="text-xs font-medium text-[#D4750A] hover:underline"
           >
             Forgot password?
-          </a>
+          </button>
         </div>
       </div>
 

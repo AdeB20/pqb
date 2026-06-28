@@ -96,6 +96,29 @@ const highlightRows = [
   },
 ];
 
+const faqs = [
+  {
+    question: "How do I reset my password?",
+    answer:
+      "Use the Forgot password link on the login page. We’ll send a reset link to your university email.",
+  },
+  {
+    question: "Will students know who the admins are?",
+    answer:
+      "No. Student actions are routed through the platform, and admin contact details stay private.",
+  },
+  {
+    question: "Can I submit feedback?",
+    answer:
+      "Yes. Once signed in, open the Feedback page from your dashboard or sidebar and send us your ideas.",
+  },
+  {
+    question: "How are uploaded questions checked?",
+    answer:
+      "Uploads go through automatic moderation before they’re published for everyone to browse.",
+  },
+];
+
 export default function LandingPage() {
   return (
     <div className="bg-background text-foreground">
@@ -285,6 +308,37 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section id="faq" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+          <div className="max-w-2xl">
+            <Badge variant="outline" className="rounded-full border-secondary/30 px-4 py-1.5 text-secondary">
+              FAQ
+            </Badge>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+              Questions students usually ask
+            </h2>
+            <p className="mt-4 text-gray-600">
+              A quick guide to the most common questions about using UniPastQ.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4">
+            {faqs.map((faq) => (
+              <details
+                key={faq.question}
+                className="group rounded-[1.5rem] border border-white/70 bg-white/80 p-5 shadow-[0_18px_45px_rgba(63,39,50,0.08)] backdrop-blur-xl"
+              >
+                <summary className="cursor-pointer list-none text-base font-semibold text-primary">
+                  <span className="flex items-center justify-between gap-4">
+                    <span>{faq.question}</span>
+                    <span className="text-secondary transition-transform group-open:rotate-45">+</span>
+                  </span>
+                </summary>
+                <p className="mt-4 text-sm leading-7 text-gray-600">{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
         <section className="bg-primary px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
           <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(212,117,10,0.18),transparent_35%)] p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] lg:p-10">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -369,6 +423,7 @@ export default function LandingPage() {
               <a href="#how-it-works" className="transition-colors hover:text-secondary">How It Works</a>
               <Link href="/register" className="transition-colors hover:text-secondary">Register</Link>
               <Link href="/login" className="transition-colors hover:text-secondary">Log In</Link>
+              <a href="#faq" className="transition-colors hover:text-secondary">FAQ</a>
             </div>
           </div>
 

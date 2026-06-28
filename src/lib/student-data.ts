@@ -119,3 +119,35 @@ export async function loadPublishedQuestionCounts(
   }
   return counts;
 }
+
+export async function loadStudentFeedbackCount(
+  supabase: Client,
+  profileId: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from("feedback_messages" as never)
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id" as never, profileId);
+
+  return count ?? 0;
+}
+
+export async function loadStudentFeedbackMessages(
+  supabase: Client,
+  profileId: string,
+): Promise<Array<{ id: string; message: string; created_at: string | null }>> {
+  const { data } = await supabase
+    .from("feedback_messages" as never)
+    .select("id, message, created_at")
+    .eq("profile_id" as never, profileId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  return (
+    (data as unknown as Array<{
+      id: string;
+      message: string;
+      created_at: string | null;
+    }>) ?? []
+  );
+}

@@ -145,7 +145,7 @@ export function AdminLoginForm({ secret }: { secret: string }) {
     const res = await fetch("/api/auth/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: resetEmail, redirectTo }),
+      body: JSON.stringify({ email: resetEmail, redirectTo, role: "super_admin" }),
     });
 
     if (!res.ok) {
@@ -237,7 +237,7 @@ export function AdminLoginForm({ secret }: { secret: string }) {
         ) : (
           <div className="text-center space-y-3">
             <p className="text-sm text-gray-700">
-              Check your email for the password reset link.
+              If an account exists for that email, a reset link has been sent.
             </p>
             <p className="text-xs text-gray-500">
               Didn&apos;t receive it?{" "}

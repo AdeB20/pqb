@@ -13,6 +13,7 @@ export function AdminMobileNav({ secret }: { secret: string }) {
     { href: `/admin/${secret}/questions`, label: "Questions" },
     { href: `/admin/${secret}/students`, label: "Students" },
     { href: `/admin/${secret}/settings`, label: "Settings" },
+    { href: `/admin/${secret}/feedback`, label: "Feedback" },
   ];
 
   return (

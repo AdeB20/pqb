@@ -163,6 +163,35 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_messages_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flags: {
         Row: {
           created_at: string | null

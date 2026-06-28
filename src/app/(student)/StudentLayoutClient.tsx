@@ -33,6 +33,7 @@ export function useProfile() {
 
 interface StudentLayoutClientProps {
   profile: StudentProfile;
+  feedbackCount: number;
   programmeName: string;
   availableLevels: number[];
   generalCourses: Course[];
@@ -42,6 +43,7 @@ interface StudentLayoutClientProps {
 
 export function StudentLayoutClient({
   profile,
+  feedbackCount,
   programmeName,
   availableLevels,
   generalCourses,
@@ -84,6 +86,7 @@ export function StudentLayoutClient({
             onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
             sidebarCollapsed={sidebarCollapsed}
             userName={profile.fullName}
+            feedbackCount={feedbackCount}
           />
 
           {profile.daysRemaining <= 14 && profile.daysRemaining > 0 && (

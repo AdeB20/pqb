@@ -41,6 +41,15 @@ const links = [
       </svg>
     ),
   },
+  {
+    href: "/feedback",
+    label: "Feedback",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3h6m-3 9a9 9 0 1 0-9-9c0 1.87.57 3.61 1.54 5.06L3 21l4.44-1.48A8.94 8.94 0 0 0 12 20.25Z" />
+      </svg>
+    ),
+  },
 ];
 
 export function BottomNav() {
